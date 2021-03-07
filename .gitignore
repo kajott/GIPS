@@ -1,1 +1,7 @@
 _build*
+SDL2.dll
+gips
+gips.exe
+*.pdb
+*.ilk
+thirdparty/SDL2-*
