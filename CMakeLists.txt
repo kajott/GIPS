@@ -33,6 +33,7 @@ endif ()
 add_executable (gips
     src/libs.c
     src/main.cpp
+    src/gips_app.cpp
     src/gl_util.cpp
     thirdparty/glad/src/glad.c
     thirdparty/imgui/imgui.cpp
