@@ -2,7 +2,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 #include <cassert>
+
+#include <algorithm>
 
 #include <SDL.h>
 #include "gl_header.h"
@@ -17,6 +20,56 @@
 #include "gips_app.h"
 
 namespace GIPS {
+
+///////////////////////////////////////////////////////////////////////////////
+
+bool App::loadImage(const std::string& filename) {
+    bool isLoaded = false;
+    uint8_t* image = nullptr;
+    int w = 0, h = 0;
+    if (filename.empty()) {
+        // create dummy image
+        w = m_targetImgWidth;
+        h = m_targetImgHeight;
+        #ifndef NDEBUG
+            fprintf(stderr, "creating %dx%d dummy image\n", w, h);
+        #endif
+        image = (uint8_t*)malloc(w * h * 4);
+        if (!image) { return false; }
+        auto p = image;
+        for (int y = 0;  y < h;  ++y) {
+            for (int x = 0;  x < w;  ++x) {
+                *p++ = uint8_t(x);
+                *p++ = uint8_t(y);
+                *p++ = uint8_t(x ^ y);
+                *p++ = 255;
+            }
+        }
+    } else {
+        // non-empty file name -> load image from file
+        #ifndef NDEBUG
+            fprintf(stderr, "loading image file '%s'\n", filename.c_str());
+        #endif
+        image = stbi_load(filename.c_str(), &w, &h, nullptr, 4);
+        if (!image) { return false; }
+        isLoaded = true;
+    }
+    // upload image
+    GLutil::clearError();
+    glBindTexture(GL_TEXTURE_2D, m_imgTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    if (GLutil::checkError("texture upload")) { return false; }
+    glFlush();
+    glFinish();
+    ::free(image);
+    m_imgWidth = w;
+    m_imgHeight = h;
+    m_imgLoaded = isLoaded;
+    if (isLoaded) { m_imgFilename = filename; }
+    return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 int App::run(int argc, char *argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
@@ -38,22 +91,23 @@ int App::run(int argc, char *argv[]) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS,        SDL_GL_CONTEXT_DEBUG_FLAG);
     #endif
 
-    SDL_Window *window = SDL_CreateWindow("GIPS",
+    m_window = SDL_CreateWindow("GIPS",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         1080, 720,
         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    if (window == nullptr) {
+    if (m_window == nullptr) {
         fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
         return 1;
     }
+    SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 
-    SDL_GLContext context = SDL_GL_CreateContext(window);
-    if (context == nullptr) {
+    m_glctx = SDL_GL_CreateContext(m_window);
+    if (m_glctx == nullptr) {
         fprintf(stderr, "SDL_GL_CreateContext failed: %s\n", SDL_GetError());
         return 1;
     }
 
-    SDL_GL_MakeCurrent(window, context);
+    SDL_GL_MakeCurrent(m_window, m_glctx);
     SDL_GL_SetSwapInterval(1);
 
     #ifdef GL_HEADER_IS_GLAD
@@ -64,135 +118,224 @@ int App::run(int argc, char *argv[]) {
     #else
         #error no valid GL header / loader
     #endif
+
     if (!GLutil::init()) {
         fprintf(stderr, "OpenGL initialization failed\n");
         return 1;
     }
     GLutil::enableDebugMessages();
-
     glClearColor(0.125f, 0.125f, 0.125f, 1.0f);
 
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui_ImplSDL2_InitForOpenGL(window, context);
+    m_io = &ImGui::GetIO();
+    ImGui_ImplSDL2_InitForOpenGL(m_window, m_glctx);
     ImGui_ImplOpenGL3_Init(nullptr);
 
-    uint8_t* image = nullptr;
-    int imageWidth = 0, imageHeight = 0;
-    if (argc > 1) {
-        image = stbi_load(argv[1], &imageWidth, &imageHeight, nullptr, 4);
-    }
-    if (!image) {
-        imageWidth = 640;
-        imageHeight = 480;
-        image = (uint8_t*)malloc(imageWidth * imageHeight * 4);
-        assert(image != nullptr);
-        auto p = image;
-        for (int y = 0;  y < imageHeight;  ++y) {
-            for (int x = 0;  x < imageWidth;  ++x) {
-                *p++ = uint8_t(x);
-                *p++ = uint8_t(y);
-                *p++ = uint8_t(x ^ y);
-                *p++ = 255;
-            }
-        }
-    }
-
-    GLuint imgTex = 0;
-    glGenTextures(1, &imgTex);
-    glBindTexture(GL_TEXTURE_2D, imgTex);
+    glGenTextures(1, &m_imgTex);
+    glBindTexture(GL_TEXTURE_2D, m_imgTex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
     GLutil::checkError("texture setup");
 
-    GLutil::Shader vs(GL_VERTEX_SHADER,
+    m_vertexShader.compile(GL_VERTEX_SHADER,
          "#version 330 core"
-    "\n" "uniform vec4 gips_screen_area;"
-    "\n" "uniform vec4 gips_tex_area;"
-    "\n" "out vec2 gips_tc;"
+    "\n" "uniform vec4 gips_area;"
+    "\n" "out vec2 gips_pos;"
     "\n" "void main() {"
     "\n" "  vec2 pos = vec2(float(gl_VertexID & 1), float((gl_VertexID & 2) >> 1));"
-    "\n" "  gips_tc = gips_tex_area.xy + pos * gips_tex_area.zw;"
-    "\n" "  gl_Position = vec4(gips_screen_area.xy + pos * gips_screen_area.zw, 0., 1.);"
+    "\n" "  gips_pos = pos;"
+    "\n" "  gl_Position = vec4(gips_area.xy + pos * gips_area.zw, 0., 1.);"
     "\n" "}"
     "\n");
-    GLutil::checkError("VS compilation");
-    puts(vs.getLog());
+    if (!m_vertexShader.good()) {
+        fprintf(stderr, "failed to compile the main vertex shader:\n%s\n", m_vertexShader.getLog());
+        return 1;
+    }
+
     GLutil::Shader fs(GL_FRAGMENT_SHADER,
          "#version 330 core"
     "\n" "uniform sampler2D gips_tex;"
-    "\n" "in vec2 gips_tc;"
+    "\n" "in vec2 gips_pos;"
     "\n" "out vec4 gips_frag;"
     "\n" "void main() {"
-    "\n" "  //gips_frag = vec4(1., 1., 1., 1.);"
-    "\n" "  gips_frag = texture(gips_tex, gips_tc);"
+    "\n" "  gips_frag = texture(gips_tex, gips_pos);"
     "\n" "}"
     "\n");
-    GLutil::checkError("FS compilation");
-    puts(fs.getLog());
-    GLutil::Program prog(vs, fs);
-    GLutil::checkError("linking");
-    puts(prog.getLog());
-
-    prog.use();
-    GLutil::checkError("program activation");
-    GLint locScreenArea = prog.getUniformLocation("gips_screen_area");
-    GLint locTexArea = prog.getUniformLocation("gips_tex_area");
-    GLutil::checkError("uniform lookup");
-
-    glUniform4f(locScreenArea, -1.f, 1.f, 2.f, -2.f);
-    glUniform4f(locTexArea, 0.f, 0.f, 1.f, 1.f);
-    GLutil::checkError("uniform setup");
-
-    for (bool active = true;  active;) {
-        SDL_Event ev;
-        while (SDL_PollEvent(&ev)) {
-            ImGui_ImplSDL2_ProcessEvent(&ev);
-            switch (ev.type) {
-                case SDL_QUIT:
-                    active = false;
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL2_NewFrame(window);
-        ImGui::NewFrame();
-
-        ImGui::Text("Hi from ImGui!"); 
-
-        ImGui::Render();
-
-        glViewport(0, 0, int(io.DisplaySize.x), int(io.DisplaySize.y));
-        glClear(GL_COLOR_BUFFER_BIT);
-        GLutil::checkError("viewport&clear");
-
-        prog.use();
-        glDisable(GL_CULL_FACE);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        GLutil::checkError("image draw");
-
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        GLutil::checkError("GUI draw");
-        SDL_GL_SwapWindow(window);
-        GLutil::checkError("swap");
+    if (!fs.good()) {
+        fprintf(stderr, "failed to compile the main fragment shader:\n%s\n", fs.getLog());
+        return 1;
     }
 
-    ::free(image);
+    if (!m_imgProgram.link(m_vertexShader, fs)) {
+        fprintf(stderr, "failed to compile the main shader program:\n%s\n", m_imgProgram.getLog());
+        return 1;
+    }
+    if (m_imgProgram.use()) {
+        m_imgProgramAreaLoc = m_imgProgram.getUniformLocation("gips_area");
+        GLutil::checkError("uniform lookup");
+    }
+    fs.free();
 
+    loadImage((argc > 1) ? argv[1] : "");
+
+    // main loop
+    while (m_active) {
+        handleEvents();
+        updateImageGeometry();
+
+        // process the UI
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL2_NewFrame(m_window);
+        ImGui::NewFrame();
+        drawUI();
+        ImGui::Render();
+
+        // start rendering
+        GLutil::clearError();
+        glViewport(0, 0, int(m_io->DisplaySize.x), int(m_io->DisplaySize.y));
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // draw the main image
+        updateImageGeometry();
+        if (m_imgProgram.use()) {
+            glBindTexture(GL_TEXTURE_2D, m_imgTex);
+            float scaleX =  2.0f / m_io->DisplaySize.x;
+            float scaleY = -2.0f / m_io->DisplaySize.y;
+            glUniform4f(m_imgProgramAreaLoc,
+                scaleX * float(m_imgX0) - 1.0f,
+                scaleY * float(m_imgY0) + 1.0f,
+                scaleX * m_imgZoom * float(m_imgWidth),
+                scaleY * m_imgZoom * float(m_imgHeight));
+            GLutil::checkError("uniform setup");
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+            GLutil::checkError("image draw");
+        }
+
+        // draw the GUI and finish the frame
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        GLutil::checkError("GUI draw");
+        SDL_GL_SwapWindow(m_window);
+    }
+
+    // clean up
     GLutil::done();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
-    SDL_GL_DeleteContext(context);
-    SDL_DestroyWindow(window);
+    SDL_GL_DeleteContext(m_glctx);
+    SDL_DestroyWindow(m_window);
     SDL_Quit();
     return 0;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+void App::handleEvents() {
+    SDL_Event ev;
+    while (SDL_PollEvent(&ev)) {
+        ImGui_ImplSDL2_ProcessEvent(&ev);
+        switch (ev.type) {
+            case SDL_QUIT:
+                m_active = false;
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+                if (!m_io->WantCaptureMouse && (ev.button.button == SDL_BUTTON_LEFT)) {
+                    panStart(ev.button.x, ev.button.y);
+                }
+                break;
+            case SDL_MOUSEMOTION:
+                if (m_panning && (ev.motion.state & SDL_BUTTON_LMASK)) {
+                    panUpdate(ev.motion.x, ev.motion.y);
+                }
+                break;
+            case SDL_MOUSEBUTTONUP:
+                m_panning = false;
+                break;
+            case SDL_MOUSEWHEEL:
+                if (!m_io->WantCaptureMouse) {
+                    int x = int(m_io->DisplaySize.x * 0.5f);
+                    int y = int(m_io->DisplaySize.y * 0.5f);
+                    SDL_GetMouseState(&x, &y);
+                    zoomAt(x, y, ev.wheel.y);
+                }
+                m_panning = false;
+                break;
+            case SDL_DROPFILE:
+                loadImage(ev.drop.file);
+                SDL_free(ev.drop.file);
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+float App::getFitZoom() {
+    return std::min(m_io->DisplaySize.x / m_imgWidth,
+                    m_io->DisplaySize.y / m_imgHeight);
+}
+
+void App::updateImageGeometry() {
+    float fitZoom = getFitZoom();
+    if (m_imgAutofit) {
+        m_imgZoom = (fitZoom <= 1.0f) ? fitZoom : std::floor(fitZoom);
+    }
+    static const auto sanitizePos = [this] (int pos, float dispSizef, int imgSizeUnscaled) -> int {
+        int dispSize = int(dispSizef);
+        int imgSize = int(float(imgSizeUnscaled) * m_imgZoom + 0.5f);
+        if (imgSize < dispSize) {
+            return (dispSize - imgSize) / 2;  // if the image fits the screen, center it
+        } else {
+            return std::max(std::min(pos, 0), dispSize - imgSize);  // restrict to screen edges
+        }
+    };
+    m_imgX0 = sanitizePos(m_imgX0, m_io->DisplaySize.x, m_imgWidth);
+    m_imgY0 = sanitizePos(m_imgY0, m_io->DisplaySize.y, m_imgHeight);
+}
+
+void App::panStart(int x, int y) {
+    m_panRefX = m_imgX0 - x;
+    m_panRefY = m_imgY0 - y;
+    m_panning = true;
+}
+
+void App::panUpdate(int x, int y) {
+    m_imgX0 = m_panRefX + x;
+    m_imgY0 = m_panRefY + y;
+}
+
+void App::zoomAt(int x, int y, int delta) {
+    float pixelX = float(x - m_imgX0) / m_imgZoom;
+    float pixelY = float(y - m_imgY0) / m_imgZoom;
+    if (delta > 0) {
+        // zoom in
+        if (m_imgZoom >= 1.0f) {
+            m_imgZoom = std::ceil(m_imgZoom + 0.5f);
+        } else {
+            m_imgZoom = 1.0f / std::floor(1.0f / m_imgZoom - 0.5f);
+        }
+        m_imgAutofit = false;
+    } else if (delta < 0) {
+        // zoom out
+        if (m_imgZoom > 1.5f) {
+            m_imgZoom = std::floor(m_imgZoom - 0.5f);
+        } else {
+            m_imgZoom = 1.0f / std::ceil(1.0f / m_imgZoom + 0.5f);
+        }
+        // enable autozoom if zoomed out too far;
+        // don't bother setting the new zoom and the X0/Y0 coordinates
+        // correctly then, as they will be overridden in
+        // updateImageGeometry() anyway
+        m_imgAutofit = (m_imgZoom <= getFitZoom());
+    }
+    m_imgX0 = int(std::round(float(x) - m_imgZoom * pixelX));
+    m_imgY0 = int(std::round(float(y) - m_imgZoom * pixelY));
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 }  // namespace GIPS

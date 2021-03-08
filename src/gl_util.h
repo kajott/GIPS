@@ -9,7 +9,7 @@ extern bool initialized;
 bool init();
 void done();
 
-inline void flushError() {
+inline void clearError() {
     while (glGetError());
 }
 
@@ -53,7 +53,7 @@ public:
     bool init();
     bool link(GLuint vs, GLuint fs);
     void free();
-    inline void use() const { if (initialized) { glUseProgram(id); } }
+    inline bool use() const { if (initialized && ok) { glUseProgram(id); return true; } else { return false; } }
     inline GLint getUniformLocation(const char* name) const { return initialized ? glGetUniformLocation(id, name) : -1; }
     inline Program() {}
     inline Program(GLuint vs, GLuint fs) { link(vs, fs); }
