@@ -190,6 +190,11 @@ int App::run(int argc, char *argv[]) {
         ImGui_ImplSDL2_NewFrame(m_window);
         ImGui::NewFrame();
         drawUI();
+        #ifndef NDEBUG
+            if (m_showDemo) {
+                ImGui::ShowDemoWindow();
+            }
+        #endif
         ImGui::Render();
 
         // start rendering
@@ -239,6 +244,11 @@ void App::handleEvents() {
         switch (ev.type) {
             case SDL_QUIT:
                 m_active = false;
+                break;
+            case SDL_KEYUP:
+                if (ev.key.keysym.sym == SDLK_F9) {
+                    m_showDemo = !m_showDemo;
+                }
                 break;
             case SDL_MOUSEBUTTONDOWN:
                 if (!m_io->WantCaptureMouse && (ev.button.button == SDL_BUTTON_LEFT)) {

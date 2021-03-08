@@ -16,6 +16,7 @@ private:
     SDL_GLContext m_glctx = nullptr;
     ImGuiIO* m_io = nullptr;
     bool m_active = true;
+    bool m_showDemo = false;
 
     // source image
     GLuint m_imgTex = 0;

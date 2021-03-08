@@ -2,6 +2,6 @@ TODO
 
 ## Prequisites
 
-A C and C++ compiler, CMake, X11 development libraries on Linux
+Linux: a C/C++ compiler toolchain, CMake, SDL2 development libraries
 
-   apt install build-essential cmake libx11-dev libxext-dev libxi-dev libxcursor-dev libgl-dev
+Win32: Microsoft Visual Studio (any recent version), CMake
