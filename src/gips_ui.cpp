@@ -1,5 +1,7 @@
 #include "imgui.h"
 
+#include "string_util.h"
+
 #include "gips_app.h"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -104,7 +106,42 @@ void GIPS::App::drawUI() {
             auto& node = m_pipeline.node(nodeIndex);
             ImGui::PushID(nodeIndex);
             if (TreeNodeForGIPSNode(node.name().c_str(), m_showIndex, nodeIndex, &node)) {
-                ImGui::Text("hi there");
+                // parameters
+                for (int paramIndex = 0 ;  paramIndex < node.paramCount();  ++paramIndex) {
+                    auto& param = node.param(paramIndex);
+                    switch (param.type()) {
+                        case ParameterType::Value:
+                            ImGui::SliderFloat(param.desc().c_str(), param.value(), param.minValue(), param.maxValue(), "%.2f");
+                            break;
+                        case ParameterType::RGB:
+                            ImGui::ColorEdit3(param.desc().c_str(), param.value());
+                            break;
+                        case ParameterType::RGBA:
+                            ImGui::ColorEdit4(param.desc().c_str(), param.value());
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                // error messages (if present)
+                if (!node.errors().empty()) {
+                    if (node.passCount()) {
+                        ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
+                        ImGui::PushStyleColor(ImGuiCol_FrameBg, 0xFF202020);
+                    } else {
+                        ImGui::PushStyleColor(ImGuiCol_Text, 0xFF4080FF);
+                        ImGui::PushStyleColor(ImGuiCol_FrameBg, 0x800000FF);
+                    }
+                    ImGui::InputTextMultiline("errors",
+                        const_cast<char*>(node.errors().c_str()),
+                        StringUtil::stringLengthWithoutTrailingWhitespace(node.errors().c_str()),
+                        ImVec2(-FLT_MIN, ImGui::GetFrameHeight() + ImGui::GetTextLineHeight() * (StringUtil::countLines(node.errors().c_str()) - 1)),
+                        ImGuiInputTextFlags_ReadOnly);
+                    ImGui::PopStyleColor(2);
+                }
+
+                // end of processing node
                 ImGui::TreePop();
             }
             ImGui::PopID();

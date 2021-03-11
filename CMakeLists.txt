@@ -44,6 +44,7 @@ add_executable (gips
     src/gips_core.cpp
     src/gips_shader_loader.cpp
     src/gl_util.cpp
+    src/string_util.cpp
     thirdparty/glad/src/glad.c
     thirdparty/imgui/imgui.cpp
     thirdparty/imgui/imgui_demo.cpp

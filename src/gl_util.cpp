@@ -3,6 +3,8 @@
 #include <cstring>
 #include <cctype>
 
+#include "string_util.h"
+
 #include "gl_header.h"
 #include "gl_util.h"
 
@@ -151,11 +153,9 @@ bool Shader::compile(const char* src) {
     }
     if (logLen && log) {
         glGetShaderInfoLog(id, logAlloc, nullptr, log);
-        char *s;
-        for (s = log;  *s && isspace(*s);  ++s);
-        if (!*s) { log[0] = '\0'; /* trim empty log */ }
+        StringUtil::trimTrailingWhitespace(log);
         #ifndef NDEBUG
-            else { fprintf(stderr, "----- %s shader compilation log -----\n%s\n", (type == GL_VERTEX_SHADER) ? "vertex" : (type == GL_FRAGMENT_SHADER) ? "fragment" : "other", log); }
+            if (log[0]) { fprintf(stderr, "----- %s shader compilation log -----\n%s\n", (type == GL_VERTEX_SHADER) ? "vertex" : (type == GL_FRAGMENT_SHADER) ? "fragment" : "other", log); }
         #endif
     } else if (log) {
         log[0] = '\0';
@@ -207,11 +207,9 @@ bool Program::link(GLuint vs, GLuint fs) {
     }
     if (logLen && log) {
         glGetProgramInfoLog(id, logAlloc, nullptr, log);
-        char *s;
-        for (s = log;  *s && isspace(*s);  ++s);
-        if (!*s) { log[0] = '\0'; /* trim empty log */ }
+        StringUtil::trimTrailingWhitespace(log);
         #ifndef NDEBUG
-            else { fprintf(stderr, "----- program link log -----\n%s\n", log); }
+            if (log[0]) { fprintf(stderr, "----- program link log -----\n%s\n", log); }
         #endif
     } else if (log) {
         log[0] = '\0';
@@ -225,4 +223,5 @@ bool Program::link(GLuint vs, GLuint fs) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+
 } // namespace GLutil
