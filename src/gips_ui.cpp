@@ -30,6 +30,38 @@ struct StatusWindow {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+struct ButtonColorOverride {
+    ButtonColorOverride(float r, float g, float b) {
+        ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(r, g, b, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(r * 1.125f, g * 1.125f, b * 1.125f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.25f + 0.75f * r, 0.25f + 0.75f * g, 0.25f + 0.75f * b, 1.0f));
+    }
+    ButtonColorOverride(int rgb24) : ButtonColorOverride((rgb24 >> 16) / 255.0f, ((rgb24 >> 8) & 0xFF) / 255.0f, (rgb24 & 0xFF) / 255.0f) {}
+    ~ButtonColorOverride() {
+        ImGui::PopStyleColor(3);
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+static bool TreeNodeForGIPSNode(const char* name, int &showIndex, int nodeIndex=-1, GIPS::Node* node=nullptr) {
+    ImGui::AlignTextToFramePadding();
+    bool open = ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
+    if (node) {
+        ImGui::SameLine(ImGui::GetWindowWidth() - 70.0f);
+        ButtonColorOverride _(node->enabled() ? 0x208020 : 0x802020);
+        if (ImGui::Button(node->enabled() ? "On" : "Off")) { node->toggle(); }
+    }
+    {
+        ImGui::SameLine(ImGui::GetWindowWidth() - 40.0f);
+        ButtonColorOverride _((showIndex == nodeIndex + 1) ? 0xC0C040 : 0x405060);
+        if (ImGui::Button("Show")) { showIndex = nodeIndex + 1; }
+    }
+    return open;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 void GIPS::App::drawUI() {
     // mouse position status
     bool mouseValid = ImGui::IsMousePosValid();
@@ -59,21 +91,29 @@ void GIPS::App::drawUI() {
     // main window begin
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->WorkPos, ImGuiCond_Once, ImVec2(0.0f, 0.0f));
     if (ImGui::Begin("Filters")) {
+        int oldShowIndex = m_showIndex;
 
         // input image status
-        ImGui::AlignTextToFramePadding();
-        bool open = ImGui::TreeNodeEx("Input Image", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
-        /*
-        ImGui::SameLine(ImGui::GetWindowWidth() - 70.0f);
-        ImGui::Button("Off");
-        ImGui::SameLine(ImGui::GetWindowWidth() - 40.0f);
-        ImGui::Button("Show");
-        */
-        if (open) {
+        if (TreeNodeForGIPSNode("Input Image", m_showIndex)) {
             ImGui::Text("Working Resolution: %dx%d", m_imgWidth, m_imgHeight);
             ImGui::TreePop();
         }
 
+        // processing nodes
+        for (int nodeIndex = 0;  nodeIndex < m_pipeline.nodeCount();  ++nodeIndex) {
+            auto& node = m_pipeline.node(nodeIndex);
+            ImGui::PushID(nodeIndex);
+            if (TreeNodeForGIPSNode(node.name().c_str(), m_showIndex, nodeIndex, &node)) {
+                ImGui::Text("hi there");
+                ImGui::TreePop();
+            }
+            ImGui::PopID();
+        }
+
+        // force re-rendering when the show index changed
+        if (m_showIndex != oldShowIndex) {
+            m_pipeline.markAsChanged();
+        }
     // main window end
     }
     ImGui::End();

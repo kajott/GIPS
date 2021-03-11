@@ -20,7 +20,13 @@ if (WIN32)
         message (STATUS "unpacking SDL development headers ...")
         execute_process (COMMAND powershell Expand-Archive "${SDL2_ARCHIVE}" -DestinationPath "${CMAKE_CURRENT_LIST_DIR}/thirdparty")
     endif ()
-    set (SDL2_LIB_DIR "${SDL2_DIR}/lib/${CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE}")
+    if (NOT "$ARCH")
+        set (ARCH "${CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE}")
+    endif ()
+    if (NOT "$ARCH")
+        set (ARCH x64)
+    endif ()
+    set (SDL2_LIB_DIR "${SDL2_DIR}/lib/${ARCH}")
     set (SDL2_INCLUDE_DIRS "${SDL2_DIR}/include")
     set (SDL2_LIBRARIES "${SDL2_LIB_DIR}/SDL2.lib" "${SDL2_LIB_DIR}/SDL2main.lib")
     if (NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/SDL.dll")
@@ -35,6 +41,8 @@ add_executable (gips
     src/main.cpp
     src/gips_app.cpp
     src/gips_ui.cpp
+    src/gips_core.cpp
+    src/gips_shader_loader.cpp
     src/gl_util.cpp
     thirdparty/glad/src/glad.c
     thirdparty/imgui/imgui.cpp

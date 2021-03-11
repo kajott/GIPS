@@ -151,12 +151,11 @@ bool Shader::compile(const char* src) {
     }
     if (logLen && log) {
         glGetShaderInfoLog(id, logAlloc, nullptr, log);
+        char *s;
+        for (s = log;  *s && isspace(*s);  ++s);
+        if (!*s) { log[0] = '\0'; /* trim empty log */ }
         #ifndef NDEBUG
-            char *s;
-            for (s = log;  *s && isspace(*s);  ++s);
-            if (*s) {
-                fprintf(stderr, "----- %s shader compilation log -----\n%s\n", (type == GL_VERTEX_SHADER) ? "vertex" : (type == GL_FRAGMENT_SHADER) ? "fragment" : "other", log);
-            }
+            else { fprintf(stderr, "----- %s shader compilation log -----\n%s\n", (type == GL_VERTEX_SHADER) ? "vertex" : (type == GL_FRAGMENT_SHADER) ? "fragment" : "other", log); }
         #endif
     } else if (log) {
         log[0] = '\0';
@@ -208,12 +207,11 @@ bool Program::link(GLuint vs, GLuint fs) {
     }
     if (logLen && log) {
         glGetProgramInfoLog(id, logAlloc, nullptr, log);
+        char *s;
+        for (s = log;  *s && isspace(*s);  ++s);
+        if (!*s) { log[0] = '\0'; /* trim empty log */ }
         #ifndef NDEBUG
-            char *s;
-            for (s = log;  *s && isspace(*s);  ++s);
-            if (*s) {
-                fprintf(stderr, "----- program link log -----\n%s\n", log);
-            }
+            else { fprintf(stderr, "----- program link log -----\n%s\n", log); }
         #endif
     } else if (log) {
         log[0] = '\0';

@@ -59,12 +59,14 @@ bool App::loadImage(const std::string& filename) {
     glBindTexture(GL_TEXTURE_2D, m_imgTex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
     if (GLutil::checkError("texture upload")) { return false; }
+    glBindTexture(GL_TEXTURE_2D, 0);
     glFlush();
     glFinish();
     ::free(image);
     m_imgWidth = w;
     m_imgHeight = h;
     m_imgLoaded = isLoaded;
+    m_pipeline.markAsChanged();
     if (isLoaded) { m_imgFilename = filename; }
     return true;
 }
@@ -128,6 +130,7 @@ int App::run(int argc, char *argv[]) {
 
     ImGui::CreateContext();
     m_io = &ImGui::GetIO();
+    m_io->IniFilename = "gips_ui.ini";
     ImGui_ImplSDL2_InitForOpenGL(m_window, m_glctx);
     ImGui_ImplOpenGL3_Init(nullptr);
 
@@ -135,22 +138,11 @@ int App::run(int argc, char *argv[]) {
     glBindTexture(GL_TEXTURE_2D, m_imgTex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
     GLutil::checkError("texture setup");
 
-    m_vertexShader.compile(GL_VERTEX_SHADER,
-         "#version 330 core"
-    "\n" "uniform vec4 gips_area;"
-    "\n" "out vec2 gips_pos;"
-    "\n" "void main() {"
-    "\n" "  vec2 pos = vec2(float(gl_VertexID & 1), float((gl_VertexID & 2) >> 1));"
-    "\n" "  gips_pos = pos;"
-    "\n" "  gl_Position = vec4(gips_area.xy + pos * gips_area.zw, 0., 1.);"
-    "\n" "}"
-    "\n");
-    if (!m_vertexShader.good()) {
-        fprintf(stderr, "failed to compile the main vertex shader:\n%s\n", m_vertexShader.getLog());
+    if (!m_pipeline.init()) {
+        fprintf(stderr, "failed to initialize the main pipeline\n");
         return 1;
     }
 
@@ -168,7 +160,7 @@ int App::run(int argc, char *argv[]) {
         return 1;
     }
 
-    if (!m_imgProgram.link(m_vertexShader, fs)) {
+    if (!m_imgProgram.link(m_pipeline.vs(), fs)) {
         fprintf(stderr, "failed to compile the main shader program:\n%s\n", m_imgProgram.getLog());
         return 1;
     }
@@ -179,6 +171,9 @@ int App::run(int argc, char *argv[]) {
     fs.free();
 
     loadImage((argc > 1) ? argv[1] : "");
+    m_pipeline.addNode("Test Node");
+    //m_pipeline.addNode("Another Node");
+    m_showIndex = m_pipeline.nodeCount();
 
     // main loop
     while (m_active) {
@@ -197,7 +192,12 @@ int App::run(int argc, char *argv[]) {
         #endif
         ImGui::Render();
 
-        // start rendering
+        // image processing
+        if (m_pipeline.changed()) {
+            m_pipeline.render(m_imgTex, m_imgWidth, m_imgHeight, m_showIndex);
+        }
+
+        // start display rendering
         GLutil::clearError();
         glViewport(0, 0, int(m_io->DisplaySize.x), int(m_io->DisplaySize.y));
         glClear(GL_COLOR_BUFFER_BIT);
@@ -205,7 +205,9 @@ int App::run(int argc, char *argv[]) {
         // draw the main image
         updateImageGeometry();
         if (m_imgProgram.use()) {
-            glBindTexture(GL_TEXTURE_2D, m_imgTex);
+            glBindTexture(GL_TEXTURE_2D, m_pipeline.resultTex());
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             float scaleX =  2.0f / m_io->DisplaySize.x;
             float scaleY = -2.0f / m_io->DisplaySize.y;
             glUniform4f(m_imgProgramAreaLoc,
@@ -213,9 +215,10 @@ int App::run(int argc, char *argv[]) {
                 scaleY * float(m_imgY0) + 1.0f,
                 scaleX * m_imgZoom * float(m_imgWidth),
                 scaleY * m_imgZoom * float(m_imgHeight));
-            GLutil::checkError("uniform setup");
+            GLutil::checkError("main image uniform setup");
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-            GLutil::checkError("image draw");
+            GLutil::checkError("main image draw");
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
 
         // draw the GUI and finish the frame
@@ -246,6 +249,9 @@ void App::handleEvents() {
                 m_active = false;
                 break;
             case SDL_KEYUP:
+                if ((ev.key.keysym.sym == SDLK_q) && (SDL_GetModState() & KMOD_CTRL)) {
+                    m_active = false;
+                }
                 if (ev.key.keysym.sym == SDLK_F9) {
                     m_showDemo = !m_showDemo;
                 }

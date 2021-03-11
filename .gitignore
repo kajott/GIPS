@@ -5,3 +5,4 @@ gips.exe
 *.pdb
 *.ilk
 thirdparty/SDL2-*
+gips_ui.ini

@@ -7,6 +7,8 @@
 #include "imgui.h"
 #include "gl_util.h"
 
+#include "gips_core.h"
+
 namespace GIPS {
 
 class App {
@@ -31,6 +33,10 @@ private:
     GLutil::Shader m_vertexShader;
     GLutil::Program m_imgProgram;
     GLint m_imgProgramAreaLoc = -1;
+
+    // the main event of the show
+    Pipeline m_pipeline;
+    int m_showIndex = 0;
 
     // image geometry, zoom&pan
     int m_imgX0 = 0;
