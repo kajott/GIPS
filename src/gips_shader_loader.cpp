@@ -19,7 +19,7 @@ namespace GIPS {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-enum class TokenType : int {
+enum class GLSLToken : int {
     Other       = 0,
     Ignored     = -1,
     Uniform     = 10,
@@ -39,22 +39,22 @@ enum class TokenType : int {
 enum class PassInput { Coord, RGB, RGBA };
 enum class PassOutput { RGB, RGBA };
 
-static const StringUtil::LookupEntry<TokenType> tokenMap[] = {
-    { "in",        TokenType::Ignored },
-    { "uniform",   TokenType::Uniform },
-    { "float",     TokenType::Float },
-    { "vec2",      TokenType::Vec2 },
-    { "vec3",      TokenType::Vec3 },
-    { "vec4",      TokenType::Vec4 },
-    { "run",       TokenType::RunSingle },
-    { "run_pass1", TokenType::RunPass1 },
-    { "run_pass2", TokenType::RunPass2 },
-    { "run_pass3", TokenType::RunPass3 },
-    { "run_pass4", TokenType::RunPass4 },
-    { "(",         TokenType::OpenParens },
-    { ")",         TokenType::CloseParens },
-    { "){",        TokenType::CloseParens },
-    { nullptr,     TokenType::Other },
+static const StringUtil::LookupEntry<GLSLToken> tokenMap[] = {
+    { "in",        GLSLToken::Ignored },
+    { "uniform",   GLSLToken::Uniform },
+    { "float",     GLSLToken::Float },
+    { "vec2",      GLSLToken::Vec2 },
+    { "vec3",      GLSLToken::Vec3 },
+    { "vec4",      GLSLToken::Vec4 },
+    { "run",       GLSLToken::RunSingle },
+    { "run_pass1", GLSLToken::RunPass1 },
+    { "run_pass2", GLSLToken::RunPass2 },
+    { "run_pass3", GLSLToken::RunPass3 },
+    { "run_pass4", GLSLToken::RunPass4 },
+    { "(",         GLSLToken::OpenParens },
+    { ")",         GLSLToken::CloseParens },
+    { "){",        GLSLToken::CloseParens },
+    { nullptr,     GLSLToken::Other },
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -71,7 +71,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
     GLutil::Shader fs;
     GLutil::Program* prog = nullptr;
     Parameter* param = nullptr;
-    TokenType paramDataType = TokenType::Other;
+    GLSLToken paramDataType = GLSLToken::Other;
     int paramValueIndex = -1;
     bool inParamStatement = false;
     int currentPass = 0;
@@ -79,8 +79,8 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
     bool singlePass = false;
     PassInput inputs[MaxPasses];
     PassOutput outputs[MaxPasses];
-    static constexpr int TokenTypeHistorySize = 4;
-    TokenType tt[TokenTypeHistorySize] = { TokenType::Other, };
+    static constexpr int GLSLTokenHistorySize = 4;
+    GLSLToken tt[GLSLTokenHistorySize] = { GLSLToken::Other, };
 
     const char *code = "uniform float saturation = 1.0; // @min=0 @max=5"
                   "\n" "uniform vec3 key = vec3(.299, .587, .114);  // @rgb key color"
@@ -152,7 +152,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
                     }
                     return isNum;
                 };
-                static const auto setParamType = [&] (TokenType dt, ParameterType pt) -> void {
+                static const auto setParamType = [&] (GLSLToken dt, ParameterType pt) -> void {
                     if (paramDataType != dt) {
                         err << "(GIPS) '@" << key << "' format is incompatible with uniform data type of parameter '" << param->m_name << "'\n";
                     } else {
@@ -163,8 +163,8 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
                 // evaluate the tokens
                      if ((isKey("min") || isKey("off")) && needParam() && needNum()) { param->m_minValue = fval; }
                 else if ((isKey("max") || isKey("on"))  && needParam() && needNum()) { param->m_maxValue = fval; }
-                else if (isKey("rgb")  && needParam()) { setParamType(TokenType::Vec3, ParameterType::RGB); }
-                else if (isKey("rgba") && needParam()) { setParamType(TokenType::Vec4, ParameterType::RGBA); }
+                else if (isKey("rgb")  && needParam()) { setParamType(GLSLToken::Vec3, ParameterType::RGB); }
+                else if (isKey("rgba") && needParam()) { setParamType(GLSLToken::Vec4, ParameterType::RGBA); }
                 else if (!keyMatched) {
                     err << "(GIPS) unrecognized token '@" << key << "'\n";
                 }
@@ -188,26 +188,26 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
         }
 
         // add token type to history
-        TokenType newTT = StringUtil::lookup(tokenMap,tok.token());
-        if (newTT == TokenType::Ignored) {
+        GLSLToken newTT = StringUtil::lookup(tokenMap,tok.token());
+        if (newTT == GLSLToken::Ignored) {
             continue;
         }
-        for (int i = TokenTypeHistorySize - 1;  i;  --i) { tt[i] = tt[i-1]; }
+        for (int i = GLSLTokenHistorySize - 1;  i;  --i) { tt[i] = tt[i-1]; }
         tt[0] = newTT;
 
         // check for new uniform
         // pattern: [2]="uniform", [1]="float"|"vec3"|"vec4", [0]=name
-        if (tt[2] == TokenType::Uniform) {
-            if ((tt[1] == TokenType::Float) || (tt[1] == TokenType::Vec3) || (tt[1] == TokenType::Vec4)) {
+        if (tt[2] == GLSLToken::Uniform) {
+            if ((tt[1] == GLSLToken::Float) || (tt[1] == GLSLToken::Vec3) || (tt[1] == GLSLToken::Vec4)) {
                 newParams.emplace_back();
                 param = &newParams.back();
                 param->m_name = std::string(tok.stringFromStart(), tok.length());
                 // set a default parameter type based on the data type
                 paramDataType = tt[1];
                 switch (paramDataType) {
-                    case TokenType::Float: param->m_type = ParameterType::Value; break;
-                    case TokenType::Vec3:  param->m_type = ParameterType::RGB;   break;
-                    case TokenType::Vec4:  param->m_type = ParameterType::RGBA;  break;
+                    case GLSLToken::Float: param->m_type = ParameterType::Value; break;
+                    case GLSLToken::Vec3:  param->m_type = ParameterType::RGB;   break;
+                    case GLSLToken::Vec4:  param->m_type = ParameterType::RGBA;  break;
                     default: break;
                 }
                 paramValueIndex = -1;
@@ -243,29 +243,29 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
 
         // check pass definition
         // pattern: [3]="vec3/4", [2]="run[_passX]", [1]="(", [0]="vec2/3/4"
-        if (((tt[3] == TokenType::Vec3) || (tt[3] == TokenType::Vec4))
-        &&  ((tt[2] == TokenType::RunSingle) || (tt[2] == TokenType::RunPass1) || (tt[2] == TokenType::RunPass2) || (tt[2] == TokenType::RunPass3) || (tt[2] == TokenType::RunPass4))
-        &&   (tt[1] == TokenType::OpenParens)
-        &&  ((tt[0] == TokenType::Vec2) || (tt[0] == TokenType::Vec3) || (tt[0] == TokenType::Vec4)))
+        if (((tt[3] == GLSLToken::Vec3) || (tt[3] == GLSLToken::Vec4))
+        &&  ((tt[2] == GLSLToken::RunSingle) || (tt[2] == GLSLToken::RunPass1) || (tt[2] == GLSLToken::RunPass2) || (tt[2] == GLSLToken::RunPass3) || (tt[2] == GLSLToken::RunPass4))
+        &&   (tt[1] == GLSLToken::OpenParens)
+        &&  ((tt[0] == GLSLToken::Vec2) || (tt[0] == GLSLToken::Vec3) || (tt[0] == GLSLToken::Vec4)))
         {
             switch (tt[2]) {
-                case TokenType::RunSingle: currentPass = 0; singlePass = true; break;
-                case TokenType::RunPass1:  currentPass = 0; singlePass = false; break;
-                case TokenType::RunPass2:  currentPass = 1; break;
-                case TokenType::RunPass3:  currentPass = 2; break;
-                case TokenType::RunPass4:  currentPass = 3; break;
+                case GLSLToken::RunSingle: currentPass = 0; singlePass = true; break;
+                case GLSLToken::RunPass1:  currentPass = 0; singlePass = false; break;
+                case GLSLToken::RunPass2:  currentPass = 1; break;
+                case GLSLToken::RunPass3:  currentPass = 2; break;
+                case GLSLToken::RunPass4:  currentPass = 3; break;
                 default: assert(0);
             }
             if (currentPass >= MaxPasses) { continue; }
             switch (tt[0]) {
-                case TokenType::Vec2: inputs[currentPass] = PassInput::Coord; break;
-                case TokenType::Vec3: inputs[currentPass] = PassInput::RGB;   break;
-                case TokenType::Vec4: inputs[currentPass] = PassInput::RGBA;  break;
+                case GLSLToken::Vec2: inputs[currentPass] = PassInput::Coord; break;
+                case GLSLToken::Vec3: inputs[currentPass] = PassInput::RGB;   break;
+                case GLSLToken::Vec4: inputs[currentPass] = PassInput::RGBA;  break;
                 default: assert(0);
             }
             switch (tt[3]) {
-                case TokenType::Vec3: outputs[currentPass] = PassOutput::RGB;  break;
-                case TokenType::Vec4: outputs[currentPass] = PassOutput::RGBA; break;
+                case GLSLToken::Vec3: outputs[currentPass] = PassOutput::RGB;  break;
+                case GLSLToken::Vec4: outputs[currentPass] = PassOutput::RGBA; break;
                 default: assert(0);
             }
             passMask |= (1 << currentPass);
