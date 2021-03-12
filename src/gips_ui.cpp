@@ -130,7 +130,7 @@ void GIPS::App::drawUI() {
                         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
                         ImGui::PushStyleColor(ImGuiCol_FrameBg, 0xFF202020);
                     } else {
-                        ImGui::PushStyleColor(ImGuiCol_Text, 0xFF4080FF);
+                        ImGui::PushStyleColor(ImGuiCol_Text, 0xFF80C0FF);
                         ImGui::PushStyleColor(ImGuiCol_FrameBg, 0x800000FF);
                     }
                     ImGui::InputTextMultiline("errors",

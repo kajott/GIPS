@@ -28,6 +28,7 @@ public:
     GLuint type = 0;
     char* log = nullptr;
     inline const char* getLog() const { return log ? log : ""; }
+    inline bool haveLog() const { return log && log[0]; }
     bool ok = false;
     inline bool good() const { return initialized && ok; }
     bool init(GLuint type_);
@@ -48,6 +49,7 @@ public:
     GLuint id = 0;
     char* log = nullptr;
     inline const char* getLog() const { return log ? log : ""; }
+    inline bool haveLog() const { return log && log[0]; }
     bool ok = false;
     inline bool good() const { return initialized && ok; }
     bool init();
