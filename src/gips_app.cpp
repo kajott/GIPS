@@ -39,7 +39,7 @@ bool App::loadImage(const std::string& filename) {
         auto p = image;
         for (int y = 0;  y < h;  ++y) {
             for (int x = 0;  x < w;  ++x) {
-                *p++ = uint8_t(x);
+                *p++ = uint8_t(x) ^ 255;
                 *p++ = uint8_t(y);
                 *p++ = uint8_t(x ^ y);
                 *p++ = 255;
@@ -136,8 +136,8 @@ int App::run(int argc, char *argv[]) {
 
     glGenTextures(1, &m_imgTex);
     glBindTexture(GL_TEXTURE_2D, m_imgTex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_2D, 0);
     GLutil::checkError("texture setup");
 
@@ -165,14 +165,15 @@ int App::run(int argc, char *argv[]) {
         return 1;
     }
     if (m_imgProgram.use()) {
-        m_imgProgramAreaLoc = m_imgProgram.getUniformLocation("gips_area");
+        m_imgProgramAreaLoc = m_imgProgram.getUniformLocation("gips_pos2ndc");
+        glUniform4f(m_imgProgram.getUniformLocation("gips_rel2map"), 0.0f, 0.0f, 1.0f, 1.0f);
         GLutil::checkError("uniform lookup");
     }
     fs.free();
 
     loadImage((argc > 1) ? argv[1] : "");
-    m_pipeline.addNode("Test Node");
-    //m_pipeline.addNode("Another Node");
+    m_pipeline.addNode("saturation");
+    m_pipeline.addNode("ripple");
     m_showIndex = m_pipeline.nodeCount();
 
     // main loop

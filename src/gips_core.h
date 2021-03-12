@@ -18,6 +18,13 @@ enum class ParameterType {
 };
 
 
+enum class CoordMapMode {
+    None,
+    Pixel,
+    Relative,
+};
+
+
 class Parameter {
     friend class Node;
     friend class Pipeline;
@@ -49,7 +56,12 @@ class Node {
     std::string m_errors;
     int m_passCount = 0;
     struct PassData {
+        bool texFilter = true;
+        CoordMapMode coordMode = CoordMapMode::None;
         GLutil::Program program;
+        GLint locImageSize = -1;
+        GLint locRel2Map = -1;
+        GLint locMap2Tex = -1;
         inline PassData() {}
     } m_passes[MaxPasses];
     std::vector<Parameter> m_params;

@@ -2,7 +2,7 @@
 
 (Skipping the obvious "make things work at all" ones here.)
 
-- [ ] multi-pass filters
+- [X] multi-pass filters
 - [ ] transparency preview
 - [ ] selectable intermediate format
 - [ ] dithered display
@@ -11,3 +11,4 @@
 - [ ] poll for filter changes
 - [ ] clean uninitialization
 - [ ] perf stats
+- [ ] reset parameters to defaults

@@ -79,16 +79,35 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
     bool singlePass = false;
     PassInput inputs[MaxPasses];
     PassOutput outputs[MaxPasses];
+    bool texFilter = true;
+    CoordMapMode coordMode = CoordMapMode::Pixel;
     static constexpr int GLSLTokenHistorySize = 4;
     GLSLToken tt[GLSLTokenHistorySize] = { GLSLToken::Other, };
 
-    const char *code = "uniform float saturation = 1.0; // @min=0 @max=5"
-                  "\n" "uniform vec3 key = vec3(.299, .587, .114);  // @rgb key color"
-                  "\n" "vec3 run(vec3 c) {"
-                  "\n" "  float gray = dot(c, key / (key.r + key.g + key.b));"
-                  "\n" "  return mix(vec3(gray), c, saturation);"
-                  "\n" "}"
-                  "\n";
+    const char *code = "DUMMY";
+
+    if (!strcmp(filename, "saturation")) {
+        code = "uniform float saturation = 1.0; // @min=0 @max=5"
+          "\n" "uniform vec3 key = vec3(.299, .587, .114);  // @rgb key color"
+          "\n" "vec3 run(vec3 c) {"
+          "\n" "  float gray = dot(c, key / (key.r + key.g + key.b));"
+          "\n" "  return mix(vec3(gray), c, saturation);"
+          "\n" "}"
+          "\n";
+    }
+    if (!strcmp(filename, "ripple")) {
+        code = "uniform float amplitude = 0.0;  // @min=0 @max=0.2"
+          "\n" "uniform float frequency = 50.0; // @min=0 @max=200"
+          "\n" "uniform float phase = 0.0; // @min=0 @max=6.28"
+          "\n" "// @coord=rel"
+          "\n" "vec4 run(vec2 pos) {"
+          "\n" "  float d = length(pos);"
+          "\n" "  vec2 n = pos / d;"
+          "\n" "  d += amplitude * sin(frequency * d + phase);"
+          "\n" "  return pixel(n * d);"
+          "\n" "}"
+          "\n";
+    }
 
     // analyze the GLSL code
     tok.init(code);
@@ -140,11 +159,20 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
                     keyMatched = keyMatched || match;
                     return match;
                 };
+                static const auto isValue = [&] (const char *t) -> bool {
+                    return !strcmp(value, t);
+                };
                 static const auto needParam = [&] () -> bool {
                     if (!param) {
                         err << "(GIPS) '@" << key << "' token is only valid inside a parameter comment\n";
                     }
                     return !!param;
+                };
+                static const auto needValue = [&] () -> bool {
+                    if (!value) {
+                        err << "(GIPS) '@" << key << "' token requires a value\n";
+                    }
+                    return !!value;
                 };
                 static const auto needNum = [&] () -> bool {
                     if (!isNum) {
@@ -165,14 +193,21 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
                 else if ((isKey("max") || isKey("on"))  && needParam() && needNum()) { param->m_maxValue = fval; }
                 else if (isKey("rgb")  && needParam()) { setParamType(GLSLToken::Vec3, ParameterType::RGB); }
                 else if (isKey("rgba") && needParam()) { setParamType(GLSLToken::Vec4, ParameterType::RGBA); }
-                else if (!keyMatched) {
-                    err << "(GIPS) unrecognized token '@" << key << "'\n";
-                }
+                else if ((isKey("coord") || isKey("coords") || isKey("map")) && needValue()) {
+                         if (isValue("pixel")) { coordMode = CoordMapMode::Pixel; }
+                    else if (isValue("none"))  { coordMode = CoordMapMode::None; }
+                    else if (isValue("relative") || isValue("rel")) { coordMode = CoordMapMode::Relative; }
+                    else { err << "(GIPS) unrecognized coordinate mapping mode '" << value << "'\n"; }
+                } else if ((isKey("filter") || isKey("filt")) && needValue()) {
+                         if (isValue("1") || isValue("on")  || isValue("linear")  || isValue("bilinear")) { texFilter = true; }
+                    else if (isValue("0") || isValue("off") || isValue("nearest") || isValue("point"))    { texFilter = false; }
+                    else { err << "(GIPS) unrecognized texture filtering mode '" << value << "'\n"; }
+                } else if (!keyMatched) { err << "(GIPS) unrecognized token '@" << key << "'\n"; }
 
                 // delete the token and continue searching for the next token
                 memmove(&key[-1], pos, strlen(pos) + 1);
                 pos = &key[-1];
-            }   // END comment token extraction loop
+            }   // END of comment tokenizer loop
 
             // if this is a parameter comment, trim and store it
             if (param) {
@@ -185,7 +220,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
             ::free(comment);
             param = nullptr;  // parameter comment handled, forget about the parameter
             continue;
-        }
+        }   // END of comment handling
 
         // add token type to history
         GLSLToken newTT = StringUtil::lookup(tokenMap,tok.token());
@@ -256,6 +291,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
                 case GLSLToken::RunPass4:  currentPass = 3; break;
                 default: assert(0);
             }
+            passMask |= (1 << currentPass);
             if (currentPass >= MaxPasses) { continue; }
             switch (tt[0]) {
                 case GLSLToken::Vec2: inputs[currentPass] = PassInput::Coord; break;
@@ -268,10 +304,12 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
                 case GLSLToken::Vec4: outputs[currentPass] = PassOutput::RGBA; break;
                 default: assert(0);
             }
-            passMask |= (1 << currentPass);
+            // apply pass settings
+            m_passes[currentPass].texFilter = texFilter;
+            m_passes[currentPass].coordMode = coordMode;
             continue;
         }
-    }
+    }   // END of GLSL tokenizer loop
 
     // first pass defined?
     if (!(passMask & 1)) {
@@ -281,9 +319,14 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
 
     // generate code for the passes
     for (currentPass = 0;  (currentPass < MaxPasses) && ((passMask >> currentPass) & 1);  ++currentPass) {
+        auto& pass = m_passes[currentPass];
         passMask &= ~(1 << currentPass);
         PassInput input = inputs[currentPass];
         PassOutput output = outputs[currentPass];
+        if (input != PassInput::Coord) {
+            // coordinate remapping not needed (nor wanted) for RGB(A)->RGB(A) filters
+            pass.coordMode = CoordMapMode::None;
+        }
 
         // fragment shader assembly: boilerplate
         shader.clear();
@@ -291,7 +334,14 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
                   "#line 8000 0\n"
                   "in vec2 gips_pos;\n"
                   "out vec4 gips_frag;\n"
-                  "uniform sampler2D gips_tex;\n";
+                  "uniform sampler2D gips_tex;\n"
+                  "uniform vec2 gips_image_size;\n";
+        if (input == PassInput::Coord) {
+            shader << "uniform vec4 gips_map2tex;\n"
+                      "vec4 pixel(in vec2 pos) {\n"
+                      "  return texture(gips_tex, gips_map2tex.xy + pos * gips_map2tex.zw);\n"
+                      "}\n";
+        }
 
         // fragment shader assembly: add user code
         shader << "#line 1 " << (currentPass + 1) << "\n" << code;
@@ -336,7 +386,7 @@ puts("------------------------------------");
         fs.compile(GL_FRAGMENT_SHADER, shader.str().c_str());
         if (fs.haveLog()) { err << fs.getLog() << "\n"; }
         if (!fs.good()) { goto load_finalize; }
-        prog = &m_passes[currentPass].program;
+        prog = &pass.program;
         prog->link(vs, fs);
         if (prog->haveLog()) { err << prog->getLog() << "\n"; }
         fs.free();
@@ -345,7 +395,10 @@ puts("------------------------------------");
         // get uniform locations
         prog->use();
         GLutil::checkError("node setup");
-        glUniform4f(prog->getUniformLocation("gips_area"), -1.0f, -1.0f, 2.0f, 2.0f);
+        glUniform4f(prog->getUniformLocation("gips_pos2ndc"), -1.0f, -1.0f, 2.0f, 2.0f);
+        pass.locImageSize = prog->getUniformLocation("gips_image_size");
+        pass.locRel2Map = prog->getUniformLocation("gips_rel2map");
+        pass.locMap2Tex = (input == PassInput::Coord) ? prog->getUniformLocation("gips_map2tex") : (-1);
         for (auto& p : newParams) {
             p.m_location[currentPass] = prog->getUniformLocation(p.m_name.c_str());
         }
@@ -353,6 +406,11 @@ puts("------------------------------------");
 
         // pass program setup done
         glUseProgram(0);
+    }   // END of pass instantiation loop
+
+    // all passes processed?
+    if (passMask) {
+        err << "(GIPS) intermediate passes are missing, truncating pipeline\n";
     }
 
     // setup done, proclaim success

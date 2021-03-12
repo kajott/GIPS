@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cassert>
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -88,12 +89,13 @@ bool Pipeline::init() {
     }
     m_vs.compile(GL_VERTEX_SHADER,
          "#version 330 core"
-    "\n" "uniform vec4 gips_area;"
+    "\n" "uniform vec4 gips_pos2ndc;"
+    "\n" "uniform vec4 gips_rel2map;"
     "\n" "out vec2 gips_pos;"
     "\n" "void main() {"
     "\n" "  vec2 pos = vec2(float(gl_VertexID & 1), float((gl_VertexID & 2) >> 1));"
-    "\n" "  gips_pos = pos;"
-    "\n" "  gl_Position = vec4(gips_area.xy + pos * gips_area.zw, 0., 1.);"
+    "\n" "  gips_pos = gips_rel2map.xy + pos * gips_rel2map.zw;"
+    "\n" "  gl_Position = vec4(gips_pos2ndc.xy + pos * gips_pos2ndc.zw, 0., 1.);"
     "\n" "}"
     "\n");
 
@@ -101,8 +103,8 @@ bool Pipeline::init() {
     glGenTextures(2, m_tex);
     for (int i = 0;  i < 2;  ++i) {
         glBindTexture(GL_TEXTURE_2D, m_tex[i]);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -163,8 +165,30 @@ void Pipeline::render(GLuint srcTex, int width, int height, int maxNodes) {
             GLutil::checkError("FBO/tex/shader setup");
 
             // set up input texture
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, pass.texFilter ? GL_LINEAR : GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, pass.texFilter ? GL_LINEAR : GL_NEAREST);
+
+            // set up geometry
+            glUniform2f(pass.locImageSize, GLfloat(m_width), GLfloat(m_height));
+            double ox = 0.0, oy = 0.0, sx = 1.0, sy = 1.0;
+            switch (pass.coordMode) {
+                case CoordMapMode::Pixel:
+                    sx = m_width;
+                    sy = m_height;
+                    break;
+                case CoordMapMode::Relative:
+                    ox = -std::max(1.0, double(m_width) / double(m_height));
+                    oy = -std::max(1.0, double(m_height) / double(m_width));
+                    sx = -2.0 * ox;
+                    sy = -2.0 * oy;
+                    break;
+                default:  // None
+                    break;
+            }
+            glUniform4f(pass.locRel2Map, GLfloat(ox), GLfloat(oy), GLfloat(sx), GLfloat(sy));
+            if (pass.locMap2Tex >= 0) {
+                glUniform4f(pass.locMap2Tex, GLfloat(-ox / sx), GLfloat(-oy / sy), GLfloat(1.0 / sx), GLfloat(1.0 / sy));
+            }
 
             // set up parameters
             for (int paramIndex = 0;  paramIndex < node.paramCount();  ++paramIndex) {
