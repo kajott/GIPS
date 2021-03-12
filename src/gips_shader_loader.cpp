@@ -83,7 +83,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
     TokenType tt[TokenTypeHistorySize] = { TokenType::Other, };
 
     const char *code = "uniform float saturation = 1.0; // @min=0 @max=5"
-                  "\n" "uniform vec3 key = vec3(.299, .587, .114);  // key color"
+                  "\n" "uniform vec3 key = vec3(.299, .587, .114);  // @rgb key color"
                   "\n" "vec3 run(vec3 c) {"
                   "\n" "  float gray = dot(c, key / (key.r + key.g + key.b));"
                   "\n" "  return mix(vec3(gray), c, saturation);"
@@ -94,26 +94,106 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
     tok.init(code);
     while (tok.next()) {
         // check for comment
-        bool isComment = false;
-        if (tok.isToken("//")) { tok.extendUntil("\n"); isComment = true; }
-        if (tok.isToken("/*")) { tok.extendUntil("*/"); isComment = true; }
-        if (isComment) {
+        bool singleLineComment = tok.isToken("//");
+        bool multiLineComment  = tok.isToken("/*");
+        if (singleLineComment || multiLineComment) {
+            // extract comment
+            if (singleLineComment) { tok.extendUntil("\n"); }
+            if (multiLineComment)  { tok.extendUntil("*/"); }
             char* comment = tok.extractToken();
-//printf("%d~%d (%d) comment: '%s'\n", tok.start(), tok.end(), tok.length(), comment);
+            if (multiLineComment) { comment[strlen(comment) - 2] = '\0'; }  // strip '*/' at end
+            char* content = &comment[2];  // skip '//' or '/*'
+            if (content[0] == '!') { ++content; }  // handle '//!' Doxygen-style comment
+
+            // search for @key=value tokens
+            char *pos = content;
+            for (;;) {
+                pos = strchr(pos, '@');
+                if (!pos) { break; }  // no token found
+                if (isalnum(pos[-1])) { ++pos; continue; }  // ignore token in the middle of a word
+                // extract key
+                char *key = &pos[1];
+                char *value = nullptr;
+                for (pos = key;  StringUtil::isident(*pos);  ++pos) { *pos = tolower(*pos); }
+                if (*pos == '=') {
+                    // extract value
+                    *pos = '\0';
+                    value = &pos[1];
+                    for (pos = value;  StringUtil::isident(*pos);  ++pos) { *pos = tolower(*pos); }
+                }
+                // terminate key/value and move pos to character after token
+                if (*pos) { *pos++ = '\0'; }
+
+                // at this point, key and value have been extracted; now parse them
+                bool isNum = false;
+                float fval = 0.0f;
+                if (value) {
+                    char *end = nullptr;
+                    fval = strtof(value, &end);
+                    isNum = (end && !*end);
+                }
+
+                // define a few parsing helper functions
+                bool keyMatched = false;
+                static const auto isKey = [&] (const char *t) -> bool {
+                    bool match = !strcmp(key, t);
+                    keyMatched = keyMatched || match;
+                    return match;
+                };
+                static const auto needParam = [&] () -> bool {
+                    if (!param) {
+                        err << "(GIPS) '@" << key << "' token is only valid inside a parameter comment\n";
+                    }
+                    return !!param;
+                };
+                static const auto needNum = [&] () -> bool {
+                    if (!isNum) {
+                        err << "(GIPS) '@" << key << "' token requires a numeric value\n";
+                    }
+                    return isNum;
+                };
+                static const auto setParamType = [&] (TokenType dt, ParameterType pt) -> void {
+                    if (paramDataType != dt) {
+                        err << "(GIPS) '@" << key << "' format is incompatible with uniform data type of parameter '" << param->m_name << "'\n";
+                    } else {
+                        param->m_type = pt;
+                    }
+                };
+
+                // evaluate the tokens
+                     if ((isKey("min") || isKey("off")) && needParam() && needNum()) { param->m_minValue = fval; }
+                else if ((isKey("max") || isKey("on"))  && needParam() && needNum()) { param->m_maxValue = fval; }
+                else if (isKey("rgb")  && needParam()) { setParamType(TokenType::Vec3, ParameterType::RGB); }
+                else if (isKey("rgba") && needParam()) { setParamType(TokenType::Vec4, ParameterType::RGBA); }
+                else if (!keyMatched) {
+                    err << "(GIPS) unrecognized token '@" << key << "'\n";
+                }
+
+                // delete the token and continue searching for the next token
+                memmove(&key[-1], pos, strlen(pos) + 1);
+                pos = &key[-1];
+            }   // END comment token extraction loop
+
+            // if this is a parameter comment, trim and store it
+            if (param) {
+                content = StringUtil::skipWhitespace(content);
+                StringUtil::trimTrailingWhitespace(content);
+                if (content[0]) { param->m_desc = content; }
+            }
+
+            // done with comment processing
             ::free(comment);
+            param = nullptr;  // parameter comment handled, forget about the parameter
             continue;
         }
 
         // add token type to history
         TokenType newTT = StringUtil::lookup(tokenMap,tok.token());
-//printf("%d~%d (%d)\t%d\t%s\t", tok.start(), tok.end(), tok.length(), static_cast<int>(newTT), tok.token());
         if (newTT == TokenType::Ignored) {
-//printf("INGORED\n");
             continue;
         }
         for (int i = TokenTypeHistorySize - 1;  i;  --i) { tt[i] = tt[i-1]; }
         tt[0] = newTT;
-//for(int i=0; i<TokenTypeHistorySize;++i)printf("-%d",static_cast<int>(tt[i]));printf("-\n");
 
         // check for new uniform
         // pattern: [2]="uniform", [1]="float"|"vec3"|"vec4", [0]=name

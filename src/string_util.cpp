@@ -9,10 +9,6 @@ namespace StringUtil {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-inline bool isident(char c) {
-    return isalnum(c) || (c == '_') || (c == '.') || (c == '-') || (c == '+');
-}
-
 void Tokenizer::init(const char* str, int len) {
     m_str = str;
     m_len = (len < 0) ? int(strlen(str)) : len;

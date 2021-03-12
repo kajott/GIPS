@@ -1,8 +1,13 @@
 #pragma once
 
 #include <cstring>
+#include <cctype>
 
 namespace StringUtil {
+
+inline bool isident(char c) {
+    return c && (isalnum(c) || (c == '_') || (c == '.') || (c == '-') || (c == '+'));
+}
 
 class Tokenizer {
 public:
@@ -50,6 +55,16 @@ int stringLengthWithoutTrailingWhitespace(const char *s);
 
 inline void trimTrailingWhitespace(char* s) {
     s[stringLengthWithoutTrailingWhitespace(s)] = '\0';
+}
+
+inline const char* skipWhitespace(const char* s) {
+    while (s && *s && isspace(*s)) { ++s; }
+    return s;
+}
+
+inline char* skipWhitespace(char* s) {
+    while (s && *s && isspace(*s)) { ++s; }
+    return s;
 }
 
 }  // namespace StringUtil
