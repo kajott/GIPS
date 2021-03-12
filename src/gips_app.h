@@ -52,7 +52,7 @@ private:
     void panUpdate(int x, int y);
     void zoomAt(int x, int y, int step);
 
-    void handleEvents(bool wait);
+    bool handleEvents(bool wait);
     void drawUI();
 
 public:

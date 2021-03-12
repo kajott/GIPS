@@ -177,12 +177,11 @@ int App::run(int argc, char *argv[]) {
     m_showIndex = m_pipeline.nodeCount();
 
     // main loop
-    int frameno = 0;
+    bool hadEvents = true;
     while (m_active) {
-        // wait for events, *except* right after the first frame,
-        // where we need an additional redraw so the UI appears properly
-        ++frameno;
-        handleEvents(frameno != 2);
+        // make sure that we render *two* consecutive frames after an event
+        // before "sleeping" again; ImGui sometimes needs a frame to settle things
+        hadEvents = handleEvents(!hadEvents);
         updateImageGeometry();
 
         // process the UI
@@ -245,12 +244,14 @@ int App::run(int argc, char *argv[]) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void App::handleEvents(bool wait) {
+bool App::handleEvents(bool wait) {
     SDL_Event ev;
+    bool hadEvents = false;
     if (wait) {
         SDL_WaitEvent(nullptr);
     }
     while (SDL_PollEvent(&ev)) {
+        hadEvents = true;
         ImGui_ImplSDL2_ProcessEvent(&ev);
         switch (ev.type) {
             case SDL_QUIT:
@@ -294,6 +295,7 @@ void App::handleEvents(bool wait) {
                 break;
         }
     }
+    return hadEvents;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
