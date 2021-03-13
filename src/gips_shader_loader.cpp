@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cassert>
 
+#include <algorithm>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -310,6 +311,19 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
             continue;
         }
     }   // END of GLSL tokenizer loop
+
+    // finalize parameters
+    for (auto& p : newParams) {
+        // auto-scale format
+        float absMax = std::max(std::abs(p.m_minValue), std::abs(p.m_maxValue));
+        int vscale = std::max(0, 2 - int(std::floor(std::log10(std::max(absMax, 1e-6f)))));
+        std::string fmt = std::string("%.") + std::to_string(vscale) + std::string("f");
+        if (p.m_format.empty()) {
+            p.m_format = fmt;
+        } else {
+            p.m_format = fmt + std::string(" ") + p.m_format;
+        }
+    }
 
     // first pass defined?
     if (!(passMask & 1)) {

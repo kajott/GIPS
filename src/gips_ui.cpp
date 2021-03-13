@@ -111,13 +111,13 @@ void GIPS::App::drawUI() {
                     auto& param = node.param(paramIndex);
                     switch (param.type()) {
                         case ParameterType::Value:
-                            ImGui::SliderFloat(param.desc().c_str(), param.value(), param.minValue(), param.maxValue(), "%.2f");
+                            ImGui::SliderFloat(param.desc(), param.value(), param.minValue(), param.maxValue(), param.format());
                             break;
                         case ParameterType::RGB:
-                            ImGui::ColorEdit3(param.desc().c_str(), param.value());
+                            ImGui::ColorEdit3(param.desc(), param.value());
                             break;
                         case ParameterType::RGBA:
-                            ImGui::ColorEdit4(param.desc().c_str(), param.value());
+                            ImGui::ColorEdit4(param.desc(), param.value());
                             break;
                         default:
                             break;

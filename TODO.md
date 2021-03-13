@@ -12,5 +12,5 @@
 - [ ] clean uninitialization
 - [ ] perf stats
 - [ ] reset parameters to defaults
-- [ ] dynamic scaling of the editing precision
+- [X] dynamic scaling of the editing precision
 - [ ] load filters from ZIP file

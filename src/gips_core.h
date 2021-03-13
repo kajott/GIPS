@@ -30,6 +30,7 @@ class Parameter {
     friend class Pipeline;
     std::string m_name;
     std::string m_desc;
+    std::string m_format;
     ParameterType m_type = ParameterType::Value;
     float m_minValue     = 0.0f;
     float m_maxValue     = 1.0f;
@@ -39,8 +40,9 @@ class Parameter {
 public:
     inline Parameter() {}
     bool changed();
-    inline const std::string&  name()     const { return m_name; }
-    inline const std::string&  desc()     const { return m_desc.empty() ? m_name : m_desc; }
+    inline const char*         name()     const { return m_name.c_str(); }
+    inline const char*         desc()     const { return m_desc.empty() ? m_name.c_str() : m_desc.c_str(); }
+    inline const char*         format()   const { return m_format.empty() ? "%.2f" : m_format.c_str(); }
     inline const ParameterType type()     const { return m_type; }
     inline const float*        value()    const { return m_value; }
     inline       float*        value()          { return m_value; }
