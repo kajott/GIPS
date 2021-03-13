@@ -77,6 +77,7 @@ class Node {
 
 public:
     bool load(const char* filename, const GLutil::Shader& vs);
+    inline bool reload(const GLutil::Shader& vs) { return load(m_filename.c_str(), vs); }
 
     bool changed();
 
@@ -93,6 +94,8 @@ public:
     inline void enable()           { m_enabled = true; }
     inline void disable()          { m_enabled = false; }
     inline bool toggle()           { m_enabled = !m_enabled; return m_enabled; }
+
+    Parameter* findParam(const char* name);
 
     inline Node() {}
     inline Node(const char* filename, const GLutil::Shader& vs) { load(filename, vs); }
@@ -127,8 +130,12 @@ public:
         return n;
     }
     void removeNode(int index);
+
     bool changed();
     inline void  markAsChanged() { m_pipelineChanged = true; }
+
+    void reload();
+
     void render(GLuint srcTex, int width, int height, int maxNodes=-1);
 
     inline Pipeline() {}

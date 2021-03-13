@@ -258,11 +258,23 @@ bool App::handleEvents(bool wait) {
                 m_active = false;
                 break;
             case SDL_KEYUP:
-                if ((ev.key.keysym.sym == SDLK_q) && (SDL_GetModState() & KMOD_CTRL)) {
-                    m_active = false;
-                }
-                if (ev.key.keysym.sym == SDLK_F9) {
-                    m_showDemo = !m_showDemo;
+                switch (ev.key.keysym.sym) {
+                    case SDLK_q:
+                        if (SDL_GetModState() & KMOD_CTRL) {
+                            m_active = false;
+                        }
+                        break;
+                    case SDLK_F5:
+                        if (SDL_GetModState() & KMOD_CTRL) {
+                            loadImage(m_imgFilename);
+                        }
+                        m_pipeline.reload();
+                        break;
+                    case SDLK_F9:
+                        m_showDemo = !m_showDemo;
+                        break;
+                    default:
+                        break;
                 }
                 break;
             case SDL_MOUSEBUTTONDOWN:
@@ -310,7 +322,7 @@ void App::updateImageGeometry() {
     if (m_imgAutofit) {
         m_imgZoom = (fitZoom <= 1.0f) ? fitZoom : std::floor(fitZoom);
     }
-    static const auto sanitizePos = [this] (int pos, float dispSizef, int imgSizeUnscaled) -> int {
+    const auto sanitizePos = [this] (int pos, float dispSizef, int imgSizeUnscaled) -> int {
         int dispSize = int(dispSizef);
         int imgSize = int(float(imgSizeUnscaled) * m_imgZoom + 0.5f);
         if (imgSize < dispSize) {

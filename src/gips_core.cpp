@@ -48,6 +48,22 @@ bool Pipeline::changed() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+void Pipeline::reload() {
+    m_pipelineChanged = true;
+    for (size_t i = 0;  i < m_nodes.size();  ++i) {
+        m_nodes[i]->reload(m_vs);
+    }
+}
+
+Parameter* Node::findParam(const char* name) {
+    for (size_t i = 0;  i < m_params.size();  ++i) {
+        if (!strcmp(name, m_params[i].m_name.c_str())) { return &m_params[i]; }
+    }
+    return nullptr;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 Node* Pipeline::addNode(int index) {
     if (!init()) { return nullptr; }
     Node* n = new(std::nothrow) Node;

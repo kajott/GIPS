@@ -93,8 +93,12 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
 
     // a quick sanity check
     if (!filename || !filename[0]) { return false; }
+    #ifndef NDEBUG
+        printf("loading shader '%s'\n", filename);
+    #endif
 
     // initialize member variables to pessimistic defaults
+    m_programChanged = true;
     m_passCount = 0;
     m_filename = filename;
     {
@@ -168,33 +172,33 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
 
                 // define a few parsing helper functions
                 bool keyMatched = false;
-                static const auto isKey = [&] (const char *t) -> bool {
+                const auto isKey = [&] (const char *t) -> bool {
                     bool match = !strcmp(key, t);
                     keyMatched = keyMatched || match;
                     return match;
                 };
-                static const auto isValue = [&] (const char *t) -> bool {
+                const auto isValue = [&] (const char *t) -> bool {
                     return !strcmp(value, t);
                 };
-                static const auto needParam = [&] () -> bool {
+                const auto needParam = [&] () -> bool {
                     if (!param) {
                         err << "(GIPS) '@" << key << "' token is only valid inside a parameter comment\n";
                     }
                     return !!param;
                 };
-                static const auto needValue = [&] () -> bool {
+                const auto needValue = [&] () -> bool {
                     if (!value) {
                         err << "(GIPS) '@" << key << "' token requires a value\n";
                     }
                     return !!value;
                 };
-                static const auto needNum = [&] () -> bool {
+                const auto needNum = [&] () -> bool {
                     if (!isNum) {
                         err << "(GIPS) '@" << key << "' token requires a numeric value\n";
                     }
                     return isNum;
                 };
-                static const auto setParamType = [&] (GLSLToken dt, ParameterType pt, bool fail=true) -> bool {
+                const auto setParamType = [&] (GLSLToken dt, ParameterType pt, bool fail=true) -> bool {
                     if (paramDataType != dt) {
                         if (fail) { err << "(GIPS) '@" << key << "' format is incompatible with uniform data type of parameter '" << param->m_name << "'\n"; }
                         return false;
@@ -348,6 +352,14 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
             p.m_format = fmt;
         } else {
             p.m_format = fmt + std::string(" ") + p.m_format;
+        }
+
+        // copy old parameter values
+        Parameter* oldParam = findParam(p.name());
+        if (oldParam) {
+            for (int i = 0;  i < 4;  ++i) {
+                p.m_value[i] = oldParam->m_value[i];
+            }
         }
     }
 
