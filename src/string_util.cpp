@@ -90,4 +90,25 @@ int stringLengthWithoutTrailingWhitespace(const char *s) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+int pathBaseNameIndex(const char* path) {
+    if (!path) { return 0; }
+    int res = 0;
+    for (int i = 0;  path[i];  ++i) {
+        if (ispathsep(path[i])) { res = i + 1; }
+    }
+    return res;
+}
+
+int pathExtStartIndex(const char* path) {
+    if (!path) { return 0; }
+    int i, dot = -1;
+    for (i = 0;  path[i];  ++i) {
+        if (path[i] == '.') { dot = i; }
+        else if (ispathsep(path[i])) { dot = -1; }
+    }
+    return (dot < 0) ? i : dot;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 }  // namespace StringUtil

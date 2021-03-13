@@ -5,6 +5,8 @@
 
 namespace StringUtil {
 
+///////////////////////////////////////////////////////////////////////////////
+
 inline bool isident(char c) {
     return c && (isalnum(c) || (c == '_') || (c == '.') || (c == '-') || (c == '+') || (c == '/'));
 }
@@ -37,6 +39,8 @@ public:
     inline Tokenizer(const char* str, int len=-1) { init(str, len); }
 };
 
+///////////////////////////////////////////////////////////////////////////////
+
 template <typename T>
 struct LookupEntry {
     const char* pattern;
@@ -48,6 +52,8 @@ inline T lookup(const LookupEntry<T>* table, const char* str) {
     for(;  table->pattern && strcmp(table->pattern, str);  ++table);
     return table->value;
 }
+
+///////////////////////////////////////////////////////////////////////////////
 
 int countLines(const char* s);
 
@@ -66,5 +72,34 @@ inline char* skipWhitespace(char* s) {
     while (s && *s && isspace(*s)) { ++s; }
     return s;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+inline bool ispathsep(char c) {
+    return (c == '/')
+      #ifdef _WIN32
+        || (c == '\\')
+      #endif
+    ;
+}
+
+//! find the index of the first character of the last path component
+int pathBaseNameIndex(const char* path);
+
+//! return the last component of a path
+inline const char* pathBaseName(const char* path) {
+    return &path[pathBaseNameIndex(path)];
+}
+
+//! find the index of the dot separating the filename from the extension,
+//! or the index of the terminating null byte if there
+int pathExtStartIndex(const char* path);
+
+//! remove the extension from a file name
+inline void pathRemoveExt(char* path) {
+    if (path) { path[pathExtStartIndex(path)] = '\0'; }
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 }  // namespace StringUtil

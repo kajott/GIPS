@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS  // prevent MSVC warnings
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -63,10 +65,12 @@ static const StringUtil::LookupEntry<GLSLToken> tokenMap[] = {
 ///////////////////////////////////////////////////////////////////////////////
 
 bool Node::load(const char* filename, const GLutil::Shader& vs) {
-    // initialize local variables to pessimistic defaults
-    m_passCount = 0;
-    m_filename = filename;
-    m_name = filename;
+    // Declare all variables right here, C89-style.
+    // This is required because we're using "goto end"-style error handling
+    // here, and we can't jump over class initializations.
+    FILE *f = nullptr;
+    size_t fsize = 0;
+    char *code = nullptr;
     std::vector<Parameter> newParams;
     std::stringstream shader;
     std::stringstream err;
@@ -87,36 +91,37 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
     static constexpr int GLSLTokenHistorySize = 4;
     GLSLToken tt[GLSLTokenHistorySize] = { GLSLToken::Other, };
 
-    const char *code = "DUMMY";
+    // a quick sanity check
+    if (!filename || !filename[0]) { return false; }
 
-    if (!strcmp(filename, "saturation")) {
-        code = "uniform float saturation = 1.0;  // @min=0 @max=5"
-          "\n" "uniform vec3 key = vec3(.299, .587, .114);  // grayscale downmix"
-          "\n" "uniform float invert;  // invert luminance @toggle"
-          "\n" "uniform float sign = 1.0;  // invert chrominance @toggle @off=1 @on=-1"
-          "\n" "vec3 run(vec3 c) {"
-          "\n" "  float luma = dot(c, key / (key.r + key.g + key.b));"
-          "\n" "  vec3 chroma = c - vec3(luma);"
-          "\n" "  if (invert > 0.5) { luma = 1.0 - luma; }"
-          "\n" "  return vec3(luma) + chroma * saturation * sign;"
-          "\n" "}"
-          "\n";
+    // initialize member variables to pessimistic defaults
+    m_passCount = 0;
+    m_filename = filename;
+    {
+        const char *basename = StringUtil::pathBaseName(filename);
+        m_name = std::string(basename, StringUtil::pathExtStartIndex(basename));
     }
-    if (!strcmp(filename, "ripple")) {
-        code = "uniform float amplitude;  // @min=0 @max=0.2"
-          "\n" "uniform float frequency = 50.0;  // @min=0 @max=200"
-          "\n" "uniform float phase;  // @min=0 @max=6.28"
-          "\n" "uniform vec2 center;  // @min=-2 @max=2"
-          "\n" "// @coord=rel"
-          "\n" "vec4 run(vec2 pos) {"
-          "\n" "  vec2 tp = pos - center;"
-          "\n" "  float d = length(tp);"
-          "\n" "  vec2 n = tp / d;"
-          "\n" "  d += amplitude * sin(frequency * d + phase);"
-          "\n" "  return pixel(n * d + center);"
-          "\n" "}"
-          "\n";
+
+    // load the file
+    f = fopen(filename, "rb");
+    if (!f) {
+        err << "(GIPS) failed to open input file '" << filename << "'\n";
+        goto load_finalize;
     }
+    fseek(f, 0, SEEK_END);
+    fsize = size_t(ftell(f));
+    fseek(f, 0, SEEK_SET);
+    code = (char*) malloc(fsize + 1);
+    if (!code) {
+        err << "(GIPS) out of memory while loading the input file\n";
+        goto load_finalize;
+    }
+    if (fread(code, 1, fsize, f) != fsize) {
+        err << "(GIPS) failed to read input file '" << filename << "'\n";
+        goto load_finalize;
+    }
+    fclose(f);  f = nullptr;
+    code[fsize] = '\0';
 
     // analyze the GLSL code
     tok.init(code);
@@ -452,6 +457,8 @@ puts("------------------------------------");
     m_passCount = currentPass;
 
 load_finalize:
+    if (f) { fclose(f); }
+    ::free(code);
     m_errors = err.str();
     m_params = newParams;
     return (m_passCount > 0);

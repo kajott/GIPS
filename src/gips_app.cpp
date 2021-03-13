@@ -172,8 +172,8 @@ int App::run(int argc, char *argv[]) {
     fs.free();
 
     loadImage((argc > 1) ? argv[1] : "");
-    m_pipeline.addNode("saturation");
-    m_pipeline.addNode("ripple");
+    m_pipeline.addNode("shaders/saturation.glsl");
+    m_pipeline.addNode("shaders/ripple.glsl");
     m_showIndex = m_pipeline.nodeCount();
 
     // main loop
