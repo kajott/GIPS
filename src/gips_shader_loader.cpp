@@ -20,6 +20,8 @@ namespace GIPS {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+constexpr float MaxSupportedVersionCode = 1.0;
+
 enum class GLSLToken : int {
     Other       = 0,
     Ignored     = -1,
@@ -215,6 +217,12 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
                          if (isValue("1") || isValue("on")  || isValue("linear")  || isValue("bilinear")) { texFilter = true; }
                     else if (isValue("0") || isValue("off") || isValue("nearest") || isValue("point"))    { texFilter = false; }
                     else { err << "(GIPS) unrecognized texture filtering mode '" << value << "'\n"; }
+                } else if ((isKey("version") || isKey("gips_version")) && needNum()) {
+                    if (fval > MaxSupportedVersionCode) {
+                        err << "(GIPS) shader requires GIPS version " << fval << ", but only " << MaxSupportedVersionCode << " is supported\n";
+                        ::free(comment);
+                        goto load_finalize;
+                    }
                 } else if (!keyMatched) { err << "(GIPS) unrecognized token '@" << key << "'\n"; }
 
                 // delete the token and continue searching for the next token
