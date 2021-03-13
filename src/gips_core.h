@@ -13,6 +13,10 @@ constexpr int MaxPasses = 4;
 
 enum class ParameterType {
     Value,
+    Value2,
+    Value3,
+    Value4,
+    Toggle,
     RGB,
     RGBA,
 };

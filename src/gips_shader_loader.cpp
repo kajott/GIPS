@@ -88,24 +88,30 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
     const char *code = "DUMMY";
 
     if (!strcmp(filename, "saturation")) {
-        code = "uniform float saturation = 1.0; // @min=0 @max=5"
-          "\n" "uniform vec3 key = vec3(.299, .587, .114);  // @rgb key color"
+        code = "uniform float saturation = 1.0;  // @min=0 @max=5"
+          "\n" "uniform vec3 key = vec3(.299, .587, .114);  // grayscale downmix"
+          "\n" "uniform float invert;  // invert luminance @toggle"
+          "\n" "uniform float sign = 1.0;  // invert chrominance @toggle @off=1 @on=-1"
           "\n" "vec3 run(vec3 c) {"
-          "\n" "  float gray = dot(c, key / (key.r + key.g + key.b));"
-          "\n" "  return mix(vec3(gray), c, saturation);"
+          "\n" "  float luma = dot(c, key / (key.r + key.g + key.b));"
+          "\n" "  vec3 chroma = c - vec3(luma);"
+          "\n" "  if (invert > 0.5) { luma = 1.0 - luma; }"
+          "\n" "  return vec3(luma) + chroma * saturation * sign;"
           "\n" "}"
           "\n";
     }
     if (!strcmp(filename, "ripple")) {
-        code = "uniform float amplitude = 0.0;  // @min=0 @max=0.2"
-          "\n" "uniform float frequency = 50.0; // @min=0 @max=200"
-          "\n" "uniform float phase = 0.0; // @min=0 @max=6.28"
+        code = "uniform float amplitude;  // @min=0 @max=0.2"
+          "\n" "uniform float frequency = 50.0;  // @min=0 @max=200"
+          "\n" "uniform float phase;  // @min=0 @max=6.28"
+          "\n" "uniform vec2 center;  // @min=-2 @max=2"
           "\n" "// @coord=rel"
           "\n" "vec4 run(vec2 pos) {"
-          "\n" "  float d = length(pos);"
-          "\n" "  vec2 n = pos / d;"
+          "\n" "  vec2 tp = pos - center;"
+          "\n" "  float d = length(tp);"
+          "\n" "  vec2 n = tp / d;"
           "\n" "  d += amplitude * sin(frequency * d + phase);"
-          "\n" "  return pixel(n * d);"
+          "\n" "  return pixel(n * d + center);"
           "\n" "}"
           "\n";
     }
@@ -181,20 +187,26 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
                     }
                     return isNum;
                 };
-                static const auto setParamType = [&] (GLSLToken dt, ParameterType pt) -> void {
+                static const auto setParamType = [&] (GLSLToken dt, ParameterType pt, bool fail=true) -> bool {
                     if (paramDataType != dt) {
-                        err << "(GIPS) '@" << key << "' format is incompatible with uniform data type of parameter '" << param->m_name << "'\n";
+                        if (fail) { err << "(GIPS) '@" << key << "' format is incompatible with uniform data type of parameter '" << param->m_name << "'\n"; }
+                        return false;
                     } else {
                         param->m_type = pt;
+                        return true;
                     }
                 };
 
                 // evaluate the tokens
                      if ((isKey("min") || isKey("off")) && needParam() && needNum()) { param->m_minValue = fval; }
                 else if ((isKey("max") || isKey("on"))  && needParam() && needNum()) { param->m_maxValue = fval; }
-                else if (isKey("rgb")  && needParam()) { setParamType(GLSLToken::Vec3, ParameterType::RGB); }
-                else if (isKey("rgba") && needParam()) { setParamType(GLSLToken::Vec4, ParameterType::RGBA); }
-                else if ((isKey("coord") || isKey("coords") || isKey("map")) && needValue()) {
+                else if (isKey("unit") && needParam() && needValue()) { param->m_format = value; }
+                else if ((isKey("toggle") || isKey("switch")) && needParam()) {
+                    setParamType(GLSLToken::Float, ParameterType::Toggle);
+                } else if (isKey("color")  && needParam()) {
+                    setParamType(GLSLToken::Vec3, ParameterType::RGB, false) ||
+                    setParamType(GLSLToken::Vec4, ParameterType::RGBA);
+                } else if ((isKey("coord") || isKey("coords") || isKey("map")) && needValue()) {
                          if (isValue("pixel")) { coordMode = CoordMapMode::Pixel; }
                     else if (isValue("none"))  { coordMode = CoordMapMode::None; }
                     else if (isValue("relative") || isValue("rel")) { coordMode = CoordMapMode::Relative; }
@@ -234,16 +246,17 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
         // check for new uniform
         // pattern: [2]="uniform", [1]="float"|"vec3"|"vec4", [0]=name
         if (tt[2] == GLSLToken::Uniform) {
-            if ((tt[1] == GLSLToken::Float) || (tt[1] == GLSLToken::Vec3) || (tt[1] == GLSLToken::Vec4)) {
+            if ((tt[1] == GLSLToken::Float) || (tt[1] == GLSLToken::Vec2) || (tt[1] == GLSLToken::Vec3) || (tt[1] == GLSLToken::Vec4)) {
                 newParams.emplace_back();
                 param = &newParams.back();
                 param->m_name = std::string(tok.stringFromStart(), tok.length());
                 // set a default parameter type based on the data type
                 paramDataType = tt[1];
                 switch (paramDataType) {
-                    case GLSLToken::Float: param->m_type = ParameterType::Value; break;
-                    case GLSLToken::Vec3:  param->m_type = ParameterType::RGB;   break;
-                    case GLSLToken::Vec4:  param->m_type = ParameterType::RGBA;  break;
+                    case GLSLToken::Float: param->m_type = ParameterType::Value;  break;
+                    case GLSLToken::Vec2:  param->m_type = ParameterType::Value2; break;
+                    case GLSLToken::Vec3:  param->m_type = ParameterType::Value3; break;
+                    case GLSLToken::Vec4:  param->m_type = ParameterType::Value4; break;
                     default: break;
                 }
                 paramValueIndex = -1;

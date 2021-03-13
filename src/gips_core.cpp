@@ -196,11 +196,17 @@ void Pipeline::render(GLuint srcTex, int width, int height, int maxNodes) {
                 GLint loc = param.m_location[passIndex];
                 switch (param.m_type) {
                     case ParameterType::Value:
+                    case ParameterType::Toggle:
                         glUniform1f(loc, param.m_value[0]);
                         break;
+                    case ParameterType::Value2:
+                        glUniform2fv(loc, 1, param.m_value);
+                        break;
+                    case ParameterType::Value3:
                     case ParameterType::RGB:
                         glUniform3fv(loc, 1, param.m_value);
                         break;
+                    case ParameterType::Value4:
                     case ParameterType::RGBA:
                         glUniform4fv(loc, 1, param.m_value);
                         break;

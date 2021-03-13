@@ -6,7 +6,7 @@
 namespace StringUtil {
 
 inline bool isident(char c) {
-    return c && (isalnum(c) || (c == '_') || (c == '.') || (c == '-') || (c == '+'));
+    return c && (isalnum(c) || (c == '_') || (c == '.') || (c == '-') || (c == '+') || (c == '/'));
 }
 
 class Tokenizer {

@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "imgui.h"
 
 #include "string_util.h"
@@ -110,8 +112,24 @@ void GIPS::App::drawUI() {
                 for (int paramIndex = 0 ;  paramIndex < node.paramCount();  ++paramIndex) {
                     auto& param = node.param(paramIndex);
                     switch (param.type()) {
+                        case ParameterType::Toggle: {
+                            bool checked = std::abs(param.value()[0] - param.maxValue())
+                                         < std::abs(param.value()[0] - param.minValue());
+                            if (ImGui::Checkbox(param.desc(), &checked)) {
+                                param.value()[0] = checked ? param.maxValue() : param.minValue();
+                            }
+                            break; }
                         case ParameterType::Value:
                             ImGui::SliderFloat(param.desc(), param.value(), param.minValue(), param.maxValue(), param.format());
+                            break;
+                        case ParameterType::Value2:
+                            ImGui::SliderFloat2(param.desc(), param.value(), param.minValue(), param.maxValue(), param.format());
+                            break;
+                        case ParameterType::Value3:
+                            ImGui::SliderFloat3(param.desc(), param.value(), param.minValue(), param.maxValue(), param.format());
+                            break;
+                        case ParameterType::Value4:
+                            ImGui::SliderFloat4(param.desc(), param.value(), param.minValue(), param.maxValue(), param.format());
                             break;
                         case ParameterType::RGB:
                             ImGui::ColorEdit3(param.desc(), param.value());
@@ -120,6 +138,9 @@ void GIPS::App::drawUI() {
                             ImGui::ColorEdit4(param.desc(), param.value());
                             break;
                         default:
+                            ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
+                            ImGui::Text("parameter '%s' has unsupported type", param.name());
+                            ImGui::PopStyleColor(1);
                             break;
                     }
                 }
