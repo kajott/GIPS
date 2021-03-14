@@ -60,6 +60,8 @@ public:
 
     bool loadImage(const std::string& filename);
 
+    void handleInputFile(const char* filename);
+
     int run(int argc, char* argv[]);
 };
 

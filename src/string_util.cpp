@@ -109,6 +109,17 @@ int pathExtStartIndex(const char* path) {
     return (dot < 0) ? i : dot;
 }
 
+uint32_t extractExtCode(const char* path) {
+    if (!path) { return 0; }
+    path = pathExt(path);
+    if (*path == '.') { ++path; }
+    uint32_t code = 0;
+    for (int shift = 0;  (shift < 32) && *path;  ++path, shift += 8) {
+        code |= uint32_t(tolower(*path)) << shift;
+    }
+    return code;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 }  // namespace StringUtil

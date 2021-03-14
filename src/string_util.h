@@ -1,9 +1,17 @@
 #pragma once
 
+#include <cstdint>
 #include <cstring>
 #include <cctype>
 
 namespace StringUtil {
+
+///////////////////////////////////////////////////////////////////////////////
+
+//! simple constexpr version of tolower()
+constexpr inline char ce_tolower(char c) {
+    return ((c >= 'A') && (c <= 'Z')) ? (c + 32) : c;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -99,6 +107,24 @@ int pathExtStartIndex(const char* path);
 inline void pathRemoveExt(char* path) {
     if (path) { path[pathExtStartIndex(path)] = '\0'; }
 }
+
+//! return the extension from a file name (including the dot),
+//! or an empty string if there is no file extension
+inline const char* pathExt(const char* path) {
+    return &path[pathExtStartIndex(path)];
+}
+
+//! create a 32-bit code representing a file extension
+constexpr inline uint32_t makeExtCode(const char* ext) {
+    return                             (!ext ||  !ext[0]) ? 0 : 
+        ((uint32_t(ce_tolower(ext[0]))      ) | (!ext[1]  ? 0 :
+        ((uint32_t(ce_tolower(ext[1])) <<  8) | (!ext[2]  ? 0 :
+        ((uint32_t(ce_tolower(ext[2])) << 16) | (!ext[3]  ? 0 :
+        ((uint32_t(ce_tolower(ext[3])) << 24))))))));
+}
+
+//! extract a 32-bit code of a file extension from a path
+uint32_t extractExtCode(const char* path);
 
 ///////////////////////////////////////////////////////////////////////////////
 

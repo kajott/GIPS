@@ -17,59 +17,11 @@
 
 #include "stb_image.h"
 
+#include "string_util.h"
+
 #include "gips_app.h"
 
 namespace GIPS {
-
-///////////////////////////////////////////////////////////////////////////////
-
-bool App::loadImage(const std::string& filename) {
-    bool isLoaded = false;
-    uint8_t* image = nullptr;
-    int w = 0, h = 0;
-    if (filename.empty()) {
-        // create dummy image
-        w = m_targetImgWidth;
-        h = m_targetImgHeight;
-        #ifndef NDEBUG
-            fprintf(stderr, "creating %dx%d dummy image\n", w, h);
-        #endif
-        image = (uint8_t*)malloc(w * h * 4);
-        if (!image) { return false; }
-        auto p = image;
-        for (int y = 0;  y < h;  ++y) {
-            for (int x = 0;  x < w;  ++x) {
-                *p++ = uint8_t(x) ^ 255;
-                *p++ = uint8_t(y);
-                *p++ = uint8_t(x ^ y);
-                *p++ = 255;
-            }
-        }
-    } else {
-        // non-empty file name -> load image from file
-        #ifndef NDEBUG
-            fprintf(stderr, "loading image file '%s'\n", filename.c_str());
-        #endif
-        image = stbi_load(filename.c_str(), &w, &h, nullptr, 4);
-        if (!image) { return false; }
-        isLoaded = true;
-    }
-    // upload image
-    GLutil::clearError();
-    glBindTexture(GL_TEXTURE_2D, m_imgTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-    if (GLutil::checkError("texture upload")) { return false; }
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glFlush();
-    glFinish();
-    ::free(image);
-    m_imgWidth = w;
-    m_imgHeight = h;
-    m_imgLoaded = isLoaded;
-    m_pipeline.markAsChanged();
-    if (isLoaded) { m_imgFilename = filename; }
-    return true;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -171,10 +123,10 @@ int App::run(int argc, char *argv[]) {
     }
     fs.free();
 
-    loadImage((argc > 1) ? argv[1] : "");
-    m_pipeline.addNode("shaders/saturation.glsl");
-    m_pipeline.addNode("shaders/ripple.glsl");
-    m_showIndex = m_pipeline.nodeCount();
+    loadImage("");
+    for (int i = 1;  i < argc;  ++i) {
+        handleInputFile(argv[i]);
+    }
 
     // main loop
     bool hadEvents = true;
@@ -300,7 +252,7 @@ bool App::handleEvents(bool wait) {
                 m_panning = false;
                 break;
             case SDL_DROPFILE:
-                loadImage(ev.drop.file);
+                handleInputFile(ev.drop.file);
                 SDL_free(ev.drop.file);
                 break;
             default:
@@ -372,6 +324,86 @@ void App::zoomAt(int x, int y, int delta) {
     }
     m_imgX0 = int(std::round(float(x) - m_imgZoom * pixelX));
     m_imgY0 = int(std::round(float(y) - m_imgZoom * pixelY));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void App::handleInputFile(const char* filename) {
+    switch (StringUtil::extractExtCode(filename)) {
+        case StringUtil::makeExtCode("glsl"):
+        case StringUtil::makeExtCode("frag"):
+        case StringUtil::makeExtCode("gips"):
+            if (m_pipeline.addNode(filename, m_showIndex)) {
+                m_showIndex++;
+            }
+            break;
+        case StringUtil::makeExtCode("jpg"):
+        case StringUtil::makeExtCode("jpeg"):
+        case StringUtil::makeExtCode("jpe"):
+        case StringUtil::makeExtCode("png"):
+        case StringUtil::makeExtCode("tga"):
+        case StringUtil::makeExtCode("bmp"):
+        case StringUtil::makeExtCode("psd"):
+        case StringUtil::makeExtCode("gif"):
+        case StringUtil::makeExtCode("pgm"):
+        case StringUtil::makeExtCode("ppm"):
+        case StringUtil::makeExtCode("pnm"):
+            loadImage(filename);
+            break;
+        default:
+            #ifndef DEBUG
+                fprintf(stderr, "unknown file type: %s\n", filename);
+            #endif
+            break;
+    }
+}
+
+bool App::loadImage(const std::string& filename) {
+    bool isLoaded = false;
+    uint8_t* image = nullptr;
+    int w = 0, h = 0;
+    if (filename.empty()) {
+        // create dummy image
+        w = m_targetImgWidth;
+        h = m_targetImgHeight;
+        #ifndef NDEBUG
+            fprintf(stderr, "creating %dx%d dummy image\n", w, h);
+        #endif
+        image = (uint8_t*)malloc(w * h * 4);
+        if (!image) { return false; }
+        auto p = image;
+        for (int y = 0;  y < h;  ++y) {
+            for (int x = 0;  x < w;  ++x) {
+                *p++ = uint8_t(x) ^ 255;
+                *p++ = uint8_t(y);
+                *p++ = uint8_t(x ^ y);
+                *p++ = 255;
+            }
+        }
+    } else {
+        // non-empty file name -> load image from file
+        #ifndef NDEBUG
+            fprintf(stderr, "loading image file '%s'\n", filename.c_str());
+        #endif
+        image = stbi_load(filename.c_str(), &w, &h, nullptr, 4);
+        if (!image) { return false; }
+        isLoaded = true;
+    }
+    // upload image
+    GLutil::clearError();
+    glBindTexture(GL_TEXTURE_2D, m_imgTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    if (GLutil::checkError("texture upload")) { return false; }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glFlush();
+    glFinish();
+    ::free(image);
+    m_imgWidth = w;
+    m_imgHeight = h;
+    m_imgLoaded = isLoaded;
+    m_pipeline.markAsChanged();
+    if (isLoaded) { m_imgFilename = filename; }
+    return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
