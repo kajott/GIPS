@@ -148,6 +148,11 @@ int App::run(int argc, char *argv[]) {
         #endif
         ImGui::Render();
 
+        // process pipeline changes
+        if (handlePCR()) {
+            hadEvents = true;
+        }
+
         // image processing
         if (m_pipeline.changed()) {
             m_pipeline.render(m_imgTex, m_imgWidth, m_imgHeight, m_showIndex);
@@ -324,6 +329,70 @@ void App::zoomAt(int x, int y, int delta) {
     }
     m_imgX0 = int(std::round(float(x) - m_imgZoom * pixelX));
     m_imgY0 = int(std::round(float(y) - m_imgZoom * pixelY));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+bool App::handlePCR() {
+    if (m_pcr.type == PipelineChangeRequest::Type::None) { return false; }
+    bool done = false;
+    bool validNodeIndex = (m_pcr.nodeIndex > 0) && (m_pcr.nodeIndex <= m_pipeline.nodeCount());
+    #ifndef NDEBUG
+        fprintf(stderr, "handling PCR of type %d on node %d\n", static_cast<int>(m_pcr.type), m_pcr.nodeIndex);
+    #endif
+    switch (m_pcr.type) {
+
+        case PipelineChangeRequest::Type::LoadNode:
+            if (validNodeIndex) {
+                if (m_pipeline.addNode(m_pcr.path.c_str())) {
+                    if (m_showIndex == m_pipeline.nodeCount()) { ++m_showIndex; }
+                }
+            } else {
+                if (m_pipeline.addNode(m_pcr.path.c_str(), m_pcr.nodeIndex - 1)) {
+                    if (m_showIndex >= m_pcr.nodeIndex) { ++m_showIndex; }
+                }
+            }
+            done = true;
+            break;
+
+
+        case PipelineChangeRequest::Type::ReloadNode:
+            if (validNodeIndex) {
+                m_pipeline.node(m_pcr.nodeIndex - 1).reload(m_pipeline.vs());
+                done = true;
+            }
+            break;
+
+        case PipelineChangeRequest::Type::RemoveNode:
+            if (validNodeIndex) {
+                m_pipeline.removeNode(m_pcr.nodeIndex - 1);
+                if (m_showIndex >= m_pcr.nodeIndex) { --m_showIndex; }
+                done = true;
+            }
+            break;
+
+        case PipelineChangeRequest::Type::MoveNode:
+            if (validNodeIndex && (m_pcr.nodeIndex != m_pcr.targetIndex)
+            && (m_pcr.targetIndex > 0) && (m_pcr.targetIndex <= m_pipeline.nodeCount())) {
+                m_pipeline.moveNode(m_pcr.nodeIndex - 1, m_pcr.targetIndex - 1);
+                if ((m_showIndex > std::min(m_pcr.nodeIndex, m_pcr.targetIndex))
+                &&  (m_showIndex < std::max(m_pcr.nodeIndex, m_pcr.targetIndex))) {
+                    if (m_pcr.nodeIndex < m_pcr.targetIndex) { --m_showIndex; }
+                                                        else { ++m_showIndex; }
+                }
+                done = true;
+            }
+            break;
+
+        default:
+            break;
+    }
+
+    // reset PCR
+    m_pcr.type = PipelineChangeRequest::Type::None;
+    m_pcr.nodeIndex = m_pcr.targetIndex = 0;
+    m_pcr.path.clear();
+    return done;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

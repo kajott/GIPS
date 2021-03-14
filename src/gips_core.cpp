@@ -90,6 +90,18 @@ void Pipeline::removeNode(int index) {
     m_pipelineChanged = true;
 }
 
+void Pipeline::moveNode(int fromIndex, int toIndex) {
+    int lastIndex = int(m_nodes.size() - 1);
+    if ((fromIndex < 0) || (fromIndex > lastIndex)
+    ||  (toIndex < 0)   ||   (toIndex > lastIndex)
+    ||  (fromIndex == toIndex)) { return; }
+    Node *n = m_nodes[fromIndex];
+    while (fromIndex < toIndex) { m_nodes[fromIndex] = m_nodes[fromIndex + 1]; ++fromIndex; }
+    while (fromIndex > toIndex) { m_nodes[fromIndex] = m_nodes[fromIndex - 1]; --fromIndex; }
+    m_nodes[toIndex] = n;
+    m_pipelineChanged = true;
+}
+
 Pipeline::~Pipeline() {
     for (size_t i = 0;  i < m_nodes.size();  ++i) {
         delete m_nodes[i];

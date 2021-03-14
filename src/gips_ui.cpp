@@ -48,9 +48,33 @@ struct ButtonColorOverride {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static bool TreeNodeForGIPSNode(const char* name, int &showIndex, int nodeIndex=-1, GIPS::Node* node=nullptr) {
+static bool TreeNodeForGIPSNode(GIPS::App& app, int nodeIndex=0, GIPS::Node* node=nullptr) {
     ImGui::AlignTextToFramePadding();
-    bool open = ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
+    bool open = ImGui::TreeNodeEx(node ? node->name() : "Input Image",
+        ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
+
+    // add context menu
+    if (node && ImGui::BeginPopupContextItem("node context menu popup")) {
+        if (ImGui::BeginMenu("filename")) {
+            ImGui::Text("%s", node->filename());
+            ImGui::EndMenu();
+        }
+        if ((nodeIndex > 1) && ImGui::Selectable("move up")) {
+            app.requestMoveNode(nodeIndex, nodeIndex - 1);
+        }
+        if ((nodeIndex < app.getNodeCount()) && ImGui::Selectable("move down")) {
+            app.requestMoveNode(nodeIndex, nodeIndex + 1);
+        }
+        if (ImGui::Selectable("reload")) {
+            app.requestReloadNode(nodeIndex);
+        }
+        if (ImGui::Selectable("remove")) {
+            app.requestRemoveNode(nodeIndex);
+        }
+        ImGui::EndPopup();
+    }
+
+    // add node toggle and show index buttons
     if (node) {
         ImGui::SameLine(ImGui::GetWindowWidth() - 70.0f);
         ButtonColorOverride _(node->enabled() ? 0x208020 : 0x802020);
@@ -58,8 +82,8 @@ static bool TreeNodeForGIPSNode(const char* name, int &showIndex, int nodeIndex=
     }
     {
         ImGui::SameLine(ImGui::GetWindowWidth() - 40.0f);
-        ButtonColorOverride _((showIndex == nodeIndex + 1) ? 0xC0C040 : 0x405060);
-        if (ImGui::Button("Show")) { showIndex = nodeIndex + 1; }
+        ButtonColorOverride _((app.getShowIndex() == nodeIndex) ? 0xC0C040 : 0x405060);
+        if (ImGui::Button("Show")) { app.setShowIndex(nodeIndex); }
     }
     return open;
 }
@@ -98,16 +122,16 @@ void GIPS::App::drawUI() {
         int oldShowIndex = m_showIndex;
 
         // input image status
-        if (TreeNodeForGIPSNode("Input Image", m_showIndex)) {
+        if (TreeNodeForGIPSNode(*this)) {
             ImGui::Text("Working Resolution: %dx%d", m_imgWidth, m_imgHeight);
             ImGui::TreePop();
         }
 
         // processing nodes
-        for (int nodeIndex = 0;  nodeIndex < m_pipeline.nodeCount();  ++nodeIndex) {
-            auto& node = m_pipeline.node(nodeIndex);
+        for (int nodeIndex = 1;  nodeIndex <= m_pipeline.nodeCount();  ++nodeIndex) {
+            auto& node = m_pipeline.node(nodeIndex - 1);
             ImGui::PushID(nodeIndex);
-            if (TreeNodeForGIPSNode(node.name().c_str(), m_showIndex, nodeIndex, &node)) {
+            if (TreeNodeForGIPSNode(*this, nodeIndex, &node)) {
                 // parameters
                 for (int paramIndex = 0 ;  paramIndex < node.paramCount();  ++paramIndex) {
                     auto& param = node.param(paramIndex);
@@ -146,7 +170,7 @@ void GIPS::App::drawUI() {
                 }
 
                 // error messages (if present)
-                if (!node.errors().empty()) {
+                if (node.errors()[0]) {
                     if (node.passCount()) {
                         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
                         ImGui::PushStyleColor(ImGuiCol_FrameBg, 0xFF202020);
@@ -155,9 +179,9 @@ void GIPS::App::drawUI() {
                         ImGui::PushStyleColor(ImGuiCol_FrameBg, 0x800000FF);
                     }
                     ImGui::InputTextMultiline("errors",
-                        const_cast<char*>(node.errors().c_str()),
-                        StringUtil::stringLengthWithoutTrailingWhitespace(node.errors().c_str()),
-                        ImVec2(-FLT_MIN, ImGui::GetFrameHeight() + ImGui::GetTextLineHeight() * (StringUtil::countLines(node.errors().c_str()) - 1)),
+                        const_cast<char*>(node.errors()),
+                        StringUtil::stringLengthWithoutTrailingWhitespace(node.errors()),
+                        ImVec2(-FLT_MIN, ImGui::GetFrameHeight() + ImGui::GetTextLineHeight() * (StringUtil::countLines(node.errors()) - 1)),
                         ImGuiInputTextFlags_ReadOnly);
                     ImGui::PopStyleColor(2);
                 }

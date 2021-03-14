@@ -81,14 +81,14 @@ public:
 
     bool changed();
 
-    inline const std::string& name()       const { return m_name; }
-    inline const std::string& filename()   const { return m_filename; }
-    inline const std::string& errors()     const { return m_errors; }
-    inline const int          passCount()  const { return m_passCount; }
-    inline const bool         enabled()    const { return m_enabled; }
-    inline const int          paramCount() const { return int(m_params.size()); }
-    inline const Parameter&   param(int i) const { return m_params[i]; }
-    inline       Parameter&   param(int i)       { return m_params[i]; }
+    inline const char*      name()       const { return m_name.c_str(); }
+    inline const char*      filename()   const { return m_filename.c_str(); }
+    inline const char*      errors()     const { return m_errors.c_str(); }
+    inline const int        passCount()  const { return m_passCount; }
+    inline const bool       enabled()    const { return m_enabled; }
+    inline const int        paramCount() const { return int(m_params.size()); }
+    inline const Parameter& param(int i) const { return m_params[i]; }
+    inline       Parameter& param(int i)       { return m_params[i]; }
 
     inline void setEnabled(bool e) { m_enabled = e; }
     inline void enable()           { m_enabled = true; }
@@ -130,6 +130,7 @@ public:
         return n;
     }
     void removeNode(int index);
+    void moveNode(int fromIndex, int toIndex);
 
     bool changed();
     inline void  markAsChanged() { m_pipelineChanged = true; }

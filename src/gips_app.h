@@ -52,17 +52,52 @@ private:
     void panUpdate(int x, int y);
     void zoomAt(int x, int y, int step);
 
-    bool handleEvents(bool wait);
-    void drawUI();
+    // "pipeline change requests", basically APCs for modifying the popeline
+    struct PipelineChangeRequest {
+        enum class Type {
+            None,
+            LoadNode,
+            ReloadNode,
+            RemoveNode,
+            MoveNode,
+        } type = Type::None;
+        int nodeIndex = 0;    //!< node index (1-based) for all operations
+        int targetIndex = 0;  //!< target index (for MoveNode only)
+        std::string path;     //!< path to load (for LoadNode only)
+    } m_pcr;
 
-public:
-    inline App() {}
+    bool handleEvents(bool wait);
+    bool handlePCR();
+    void drawUI();
 
     bool loadImage(const std::string& filename);
 
+
+public:
+    inline App() {}
+    int run(int argc, char* argv[]);
+
     void handleInputFile(const char* filename);
 
-    int run(int argc, char* argv[]);
+    //! return the number of the currently shown filter (1-based; 0=input)
+    inline int getShowIndex() const { return m_showIndex; }
+
+    //! set the number of the currently shown filter (1-based; 0=input)
+    inline int setShowIndex(int i) {
+        m_showIndex = (i < 0) ? 0 : (i > m_pipeline.nodeCount()) ? m_pipeline.nodeCount() : i;
+        return m_showIndex;
+    }
+
+    inline int getNodeCount() const { return m_pipeline.nodeCount(); }
+
+    inline void requestLoadNode(const char* filename, int nodeIndex=0)
+        { m_pcr.type = PipelineChangeRequest::Type::LoadNode; m_pcr.nodeIndex = nodeIndex; m_pcr.path = filename; }
+    inline void requestReloadNode(int nodeIndex)
+        { m_pcr.type = PipelineChangeRequest::Type::ReloadNode; m_pcr.nodeIndex = nodeIndex; }
+    inline void requestRemoveNode(int nodeIndex)
+        { m_pcr.type = PipelineChangeRequest::Type::RemoveNode; m_pcr.nodeIndex = nodeIndex; }
+    inline void requestMoveNode(int fromIndex, int toIndex)
+        { m_pcr.type = PipelineChangeRequest::Type::MoveNode; m_pcr.nodeIndex = fromIndex; m_pcr.targetIndex = toIndex; }
 };
 
 }  // namespace GIPS
