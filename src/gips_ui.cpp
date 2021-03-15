@@ -97,12 +97,12 @@ static bool TreeNodeForGIPSNode(GIPS::App& app, int nodeIndex=0, GIPS::Node* nod
 
     // add node toggle and show index buttons
     if (node) {
-        ImGui::SameLine(ImGui::GetWindowWidth() - 70.0f);
+        ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - 55.0f);
         ButtonColorOverride _(node->enabled() ? 0x208020 : 0x802020);
         if (ImGui::Button(node->enabled() ? "On" : "Off")) { node->toggle(); }
     }
     {
-        ImGui::SameLine(ImGui::GetWindowWidth() - 40.0f);
+        ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - 24.0f);
         ButtonColorOverride _((app.getShowIndex() == nodeIndex) ? 0xC0C040 : 0x405060);
         if (ImGui::Button("Show")) { app.setShowIndex(nodeIndex); }
     }
