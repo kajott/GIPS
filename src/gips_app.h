@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <string>
 
 #include <SDL.h>
@@ -7,12 +9,21 @@
 #include "imgui.h"
 #include "gl_util.h"
 
+#include "string_util.h"
+
 #include "gips_core.h"
 
 namespace GIPS {
 
+///////////////////////////////////////////////////////////////////////////////
+
 class App {
 private:
+    // paths
+    std::string m_appDir;
+    std::string m_appUIConfigFile;
+    std::string m_shaderDir;
+
     // SDL and ImGui stuff
     SDL_Window* m_window = nullptr;
     SDL_GLContext m_glctx = nullptr;
@@ -56,7 +67,7 @@ private:
     struct PipelineChangeRequest {
         enum class Type {
             None,
-            LoadNode,
+            InsertNode,
             ReloadNode,
             RemoveNode,
             MoveNode,
@@ -72,6 +83,7 @@ private:
 
     bool loadImage(const std::string& filename);
 
+    //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //
 
 public:
     inline App() {}
@@ -88,16 +100,28 @@ public:
         return m_showIndex;
     }
 
+    inline const char* getShaderDir() const { return m_shaderDir.c_str(); }
+
     inline int getNodeCount() const { return m_pipeline.nodeCount(); }
 
-    inline void requestLoadNode(const char* filename, int nodeIndex=0)
-        { m_pcr.type = PipelineChangeRequest::Type::LoadNode; m_pcr.nodeIndex = nodeIndex; m_pcr.path = filename; }
+    inline void requestInsertNode(const char* filename, int nodeIndex=0)
+        { m_pcr.type = PipelineChangeRequest::Type::InsertNode; m_pcr.nodeIndex = nodeIndex; m_pcr.path = filename; }
     inline void requestReloadNode(int nodeIndex)
         { m_pcr.type = PipelineChangeRequest::Type::ReloadNode; m_pcr.nodeIndex = nodeIndex; }
     inline void requestRemoveNode(int nodeIndex)
         { m_pcr.type = PipelineChangeRequest::Type::RemoveNode; m_pcr.nodeIndex = nodeIndex; }
     inline void requestMoveNode(int fromIndex, int toIndex)
         { m_pcr.type = PipelineChangeRequest::Type::MoveNode; m_pcr.nodeIndex = fromIndex; m_pcr.targetIndex = toIndex; }
+
+    static bool isShaderFile(uint32_t extCode);
+    static inline bool isShaderFile(const char* filename)
+        { return isShaderFile(StringUtil::extractExtCode(filename)); }
+
+    static bool isImageFile(uint32_t extCode);
+    static inline bool isImageFile(const char* filename)
+        { return isImageFile(StringUtil::extractExtCode(filename)); }
 };
+
+///////////////////////////////////////////////////////////////////////////////
 
 }  // namespace GIPS

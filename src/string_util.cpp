@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS  // prevent MSVC warnings
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -88,6 +90,14 @@ int stringLengthWithoutTrailingWhitespace(const char *s) {
     return lastNonWS;
 }
 
+char* copy(const char* str, int extraChars) {
+    if (!str) { return nullptr; }
+    char *res = (char*) malloc(int(strlen(str)) + extraChars + 1);
+    if (!res) { return nullptr; }
+    strcpy(res, str);
+    return res;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 int pathBaseNameIndex(const char* path) {
@@ -118,6 +128,40 @@ uint32_t extractExtCode(const char* path) {
         code |= uint32_t(tolower(*path)) << shift;
     }
     return code;
+}
+
+char* pathJoin(const char* a, const char* b) {
+    // handle trivial cases
+    if (isempty(a) || isAbsPath(b)) { return copy(b); }
+    if (isempty(b)) { return copy(a); }
+
+    // allocate sufficient space for the result
+    char* path = copy(a, int(strlen(b)) + 1);
+    if (!path) { return nullptr; }
+
+    // Win32 special case: B might be a drive-relative path
+    #if _WIN32
+        if (ispathsep(b[0]) && !ispathsep(b[1])) {
+            if (isalpha(a[0]) && (a[1] == ':')) {
+                // A starts with a drive letter -> fine, join the paths
+                strcpy(&path[2], b);
+                return path;
+            } else {
+                // A is something else -> overwrite it with B completely
+                strcpy(path, b);
+                return path;
+            }
+        }
+    #endif
+
+    // remove any remaining "stray" path separators off path A
+    int idx = int(strlen(path));
+    while ((idx > 0) && ispathsep(path[idx-1])) { --idx; }
+
+    // glue the strings together with a path separator
+    path[idx++] = defaultPathSep;
+    strcpy(&path[idx], b);
+    return path;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

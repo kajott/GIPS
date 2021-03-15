@@ -1,0 +1,88 @@
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <unistd.h>
+#include <dirent.h>
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+#include <new>
+#include <string>
+
+#include "string_util.h"
+#include "file_util.h"
+
+namespace FileUtil {
+
+///////////////////////////////////////////////////////////////////////////////
+
+char* getCurrentDirectory() {
+    int len = 128;
+    char *cwd = nullptr, *res;
+    do {
+        ::free(cwd);
+        len *= 2;
+        cwd = (char*) malloc(len);
+        if (!cwd) { return nullptr; }
+        res = getcwd(cwd, len);
+    } while (!res && (errno == ERANGE));
+    if (!res) { ::free(cwd); return nullptr; }
+    return cwd;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+struct DirectoryPrivate {
+    std::string dirName;
+    DIR* dirHandle;
+    struct dirent* currentItem;
+};
+
+bool Directory::open(const char* dir) {
+    close();
+    priv = new(std::nothrow) DirectoryPrivate;
+    if (!priv) { return false; }
+    priv->dirHandle = opendir(dir);
+    if (!priv->dirHandle) {
+        delete priv;
+        priv = nullptr;
+        return false;
+    }
+    priv->dirName = dir;
+    priv->currentItem = nullptr;
+    return true;
+}
+
+void Directory::close() {
+    if (priv) {
+        closedir(priv->dirHandle);
+        delete priv;
+        priv = nullptr;
+    }
+}
+
+bool Directory::next() {
+    if (!priv) { return false; }
+    priv->currentItem = readdir(priv->dirHandle);
+    return (priv->currentItem != nullptr);
+}
+
+const char* Directory::currentItemName() const {
+    return (priv && priv->currentItem) ? priv->currentItem->d_name : nullptr;
+}
+
+bool Directory::currentItemIsDir() {
+    if (!priv || !priv->currentItem) { return false; }
+    char *fullPath = StringUtil::pathJoin(priv->dirName.c_str(), priv->currentItem->d_name);
+    if (!fullPath) { return false; }
+    struct stat st;
+    int res = stat(fullPath, &st);
+    ::free(fullPath);
+    return !res && S_ISDIR(st.st_mode);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+}  // namespace FileUtil

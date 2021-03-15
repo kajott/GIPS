@@ -3,6 +3,7 @@
 #include "imgui.h"
 
 #include "string_util.h"
+#include "dirlist.h"
 
 #include "gips_app.h"
 
@@ -48,6 +49,22 @@ struct ButtonColorOverride {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+static void ShaderBrowserMenu(GIPS::App& app, int nodeIndex, const char* dir) {
+    const DirList& list = getCachedDirList(dir);
+    for (const auto& item : list.items) {
+        if (item.isDir) {
+            if (ImGui::BeginMenu(item.nameNoExt.c_str())) {
+                ShaderBrowserMenu(app, nodeIndex, item.fullPath.c_str());
+                ImGui::EndMenu();
+            }
+        } else if (app.isShaderFile(item.fullPath.c_str())) {
+            if (ImGui::Selectable(item.nameNoExt.c_str())) {
+                app.requestInsertNode(item.fullPath.c_str(), nodeIndex);
+            }
+        }
+    }
+}
+
 static bool TreeNodeForGIPSNode(GIPS::App& app, int nodeIndex=0, GIPS::Node* node=nullptr) {
     ImGui::AlignTextToFramePadding();
     bool open = ImGui::TreeNodeEx(node ? node->name() : "Input Image",
@@ -55,8 +72,8 @@ static bool TreeNodeForGIPSNode(GIPS::App& app, int nodeIndex=0, GIPS::Node* nod
 
     // add context menu
     if (node && ImGui::BeginPopupContextItem("node context menu popup")) {
-        if (ImGui::BeginMenu("filename")) {
-            ImGui::Text("%s", node->filename());
+        if (ImGui::BeginMenu("insert")) {
+            ShaderBrowserMenu(app, nodeIndex, app.getShaderDir());
             ImGui::EndMenu();
         }
         if ((nodeIndex > 1) && ImGui::Selectable("move up")) {
@@ -64,6 +81,10 @@ static bool TreeNodeForGIPSNode(GIPS::App& app, int nodeIndex=0, GIPS::Node* nod
         }
         if ((nodeIndex < app.getNodeCount()) && ImGui::Selectable("move down")) {
             app.requestMoveNode(nodeIndex, nodeIndex + 1);
+        }
+        if (ImGui::BeginMenu("filename")) {
+            ImGui::Text("%s", node->filename());
+            ImGui::EndMenu();
         }
         if (ImGui::Selectable("reload")) {
             app.requestReloadNode(nodeIndex);
@@ -188,16 +209,24 @@ void GIPS::App::drawUI() {
 
                 // end of processing node
                 ImGui::TreePop();
-            }
+            }   // END node UI block
             ImGui::PopID();
-        }
+        }   // END node iteration
 
         // force re-rendering when the show index changed
         if (m_showIndex != oldShowIndex) {
             m_pipeline.markAsChanged();
         }
-    // main window end
-    }
+
+        // "Add Filter" button
+        if (ImGui::Button("Add Filter ...")) {
+            ImGui::OpenPopup("add_filter");
+        }
+        if (ImGui::BeginPopup("add_filter")) {
+            ShaderBrowserMenu(*this, 0, getShaderDir());
+            ImGui::EndPopup();
+        }
+    }   // END main window
     ImGui::End();
 }
 

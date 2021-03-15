@@ -14,10 +14,10 @@
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
-
 #include "stb_image.h"
 
 #include "string_util.h"
+#include "file_util.h"
 
 #include "gips_app.h"
 
@@ -25,7 +25,42 @@ namespace GIPS {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+bool App::isShaderFile(uint32_t extCode) {
+    return (extCode == StringUtil::makeExtCode("glsl"))
+        || (extCode == StringUtil::makeExtCode("frag"))
+        || (extCode == StringUtil::makeExtCode("gips"));
+}
+
+bool App::isImageFile(uint32_t extCode) {
+    return (extCode == StringUtil::makeExtCode("jpg"))
+        || (extCode == StringUtil::makeExtCode("jpeg"))
+        || (extCode == StringUtil::makeExtCode("jpe"))
+        || (extCode == StringUtil::makeExtCode("png"))
+        || (extCode == StringUtil::makeExtCode("tga"))
+        || (extCode == StringUtil::makeExtCode("bmp"))
+        || (extCode == StringUtil::makeExtCode("psd"))
+        || (extCode == StringUtil::makeExtCode("gif"))
+        || (extCode == StringUtil::makeExtCode("pgm"))
+        || (extCode == StringUtil::makeExtCode("ppm"))
+        || (extCode == StringUtil::makeExtCode("pnm"));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 int App::run(int argc, char *argv[]) {
+    // get app's base directory
+    char* cwd = FileUtil::getCurrentDirectory();
+    char *me = StringUtil::pathJoin(cwd, argv[0]);
+    ::free(cwd);
+    StringUtil::pathRemoveBaseName(me);
+    m_appDir = me;
+    ::free(me);
+    #ifndef NDEBUG
+        fprintf(stderr, "application directory: '%s'\n", m_appDir.c_str());
+    #endif
+    m_appUIConfigFile = m_appDir + StringUtil::defaultPathSep + "gips_ui.ini";
+    m_shaderDir = m_appDir + StringUtil::defaultPathSep + "shaders";
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
         fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
         return 1;
@@ -82,7 +117,7 @@ int App::run(int argc, char *argv[]) {
 
     ImGui::CreateContext();
     m_io = &ImGui::GetIO();
-    m_io->IniFilename = "gips_ui.ini";
+    m_io->IniFilename = m_appUIConfigFile.c_str();
     ImGui_ImplSDL2_InitForOpenGL(m_window, m_glctx);
     ImGui_ImplOpenGL3_Init(nullptr);
 
@@ -342,14 +377,15 @@ bool App::handlePCR() {
     #endif
     switch (m_pcr.type) {
 
-        case PipelineChangeRequest::Type::LoadNode:
+        case PipelineChangeRequest::Type::InsertNode:
             if (validNodeIndex) {
-                if (m_pipeline.addNode(m_pcr.path.c_str())) {
-                    if (m_showIndex == m_pipeline.nodeCount()) { ++m_showIndex; }
-                }
-            } else {
                 if (m_pipeline.addNode(m_pcr.path.c_str(), m_pcr.nodeIndex - 1)) {
                     if (m_showIndex >= m_pcr.nodeIndex) { ++m_showIndex; }
+                }
+            } else {  // invalid node index -> insert at end
+                int oldNodeCount = m_pipeline.nodeCount();
+                if (m_pipeline.addNode(m_pcr.path.c_str())) {
+                    if (m_showIndex == oldNodeCount) { ++m_showIndex; }
                 }
             }
             done = true;
@@ -398,32 +434,17 @@ bool App::handlePCR() {
 ///////////////////////////////////////////////////////////////////////////////
 
 void App::handleInputFile(const char* filename) {
-    switch (StringUtil::extractExtCode(filename)) {
-        case StringUtil::makeExtCode("glsl"):
-        case StringUtil::makeExtCode("frag"):
-        case StringUtil::makeExtCode("gips"):
-            if (m_pipeline.addNode(filename, m_showIndex)) {
-                m_showIndex++;
-            }
-            break;
-        case StringUtil::makeExtCode("jpg"):
-        case StringUtil::makeExtCode("jpeg"):
-        case StringUtil::makeExtCode("jpe"):
-        case StringUtil::makeExtCode("png"):
-        case StringUtil::makeExtCode("tga"):
-        case StringUtil::makeExtCode("bmp"):
-        case StringUtil::makeExtCode("psd"):
-        case StringUtil::makeExtCode("gif"):
-        case StringUtil::makeExtCode("pgm"):
-        case StringUtil::makeExtCode("ppm"):
-        case StringUtil::makeExtCode("pnm"):
+    uint32_t extCode = StringUtil::extractExtCode(filename);
+    if (isShaderFile(extCode)) {
+        if (m_pipeline.addNode(filename, m_showIndex)) {
+            m_showIndex++;
+        }
+    } else if (isImageFile(extCode)) {
             loadImage(filename);
-            break;
-        default:
-            #ifndef DEBUG
-                fprintf(stderr, "unknown file type: %s\n", filename);
-            #endif
-            break;
+    } else {
+        #ifndef DEBUG
+            fprintf(stderr, "unknown file type: %s\n", filename);
+        #endif
     }
 }
 

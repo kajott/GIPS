@@ -63,6 +63,8 @@ inline T lookup(const LookupEntry<T>* table, const char* str) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+inline bool isempty(const char* s) { return !s || !s[0]; }
+
 int countLines(const char* s);
 
 int stringLengthWithoutTrailingWhitespace(const char *s);
@@ -81,6 +83,9 @@ inline char* skipWhitespace(char* s) {
     return s;
 }
 
+//! copy a string into a newly-malloc'd one (equivalent to strdup)
+char* copy(const char* str, int extraChars=0);
+
 ///////////////////////////////////////////////////////////////////////////////
 
 inline bool ispathsep(char c) {
@@ -91,6 +96,23 @@ inline bool ispathsep(char c) {
     ;
 }
 
+constexpr char defaultPathSep =
+    #ifdef _WIN32
+        '\\'
+    #else
+        '/'
+    #endif
+;
+
+inline bool isAbsPath(const char* c) {
+    #ifdef _WIN32
+        return c && ((isalpha(c[0]) && (c[1] == ':') && ispathsep(c[2]))
+                 ||  (ispathsep(c[0]) && ispathsep(c[1])));
+    #else
+        return c && ispathsep(c[0]);
+    #endif
+}
+
 //! find the index of the first character of the last path component
 int pathBaseNameIndex(const char* path);
 
@@ -98,6 +120,24 @@ int pathBaseNameIndex(const char* path);
 inline const char* pathBaseName(const char* path) {
     return &path[pathBaseNameIndex(path)];
 }
+
+//! extract the directory name from a path (in-place)
+inline void pathRemoveBaseName(char* path) {
+    if (!path) { return; }
+    int idx = pathBaseNameIndex(path);
+    while ((idx > 0) && ispathsep(path[idx-1])) { --idx; }
+    path[idx] = '\0';
+}
+
+//! extract the directory name from a path (copy; must be free()d by the caller)
+inline char* pathDirName(const char* path) {
+    char* res = copy(path);
+    pathRemoveBaseName(res);
+    return res;
+}
+
+//! join two paths; return a newly-allocated (to be free()d by the caller)
+char* pathJoin(const char* a, const char* b);
 
 //! find the index of the dot separating the filename from the extension,
 //! or the index of the terminating null byte if there
