@@ -142,8 +142,37 @@ void GIPS::App::drawUI() {
     if (ImGui::Begin("Filters")) {
         int oldShowIndex = m_showIndex;
 
-        // input image status
+        // input image
         if (TreeNodeForGIPSNode(*this)) {
+            // source
+            int src = static_cast<int>(m_imgSource);
+            ImGui::RadioButton("Image",   &src, static_cast<int>(ImageSource::Image));
+            ImGui::SameLine();
+            ImGui::RadioButton("Color",   &src, static_cast<int>(ImageSource::Color));
+            ImGui::SameLine();
+            ImGui::RadioButton("Pattern", &src, static_cast<int>(ImageSource::Pattern));
+            if (src != static_cast<int>(m_imgSource)) {
+                m_imgSource = static_cast<ImageSource>(src);
+                requestUpdateSource();
+            }
+
+            // image source
+            if (m_imgSource == ImageSource::Image) {
+                ImGui::Text("drag & drop an image to load it");
+                ImGui::InputTextMultiline("filename",
+                    const_cast<char*>(m_imgFilename.c_str()),
+                    m_imgFilename.size(),
+                    ImVec2(-FLT_MIN, ImGui::GetFrameHeight() + 0*ImGui::GetTextLineHeight()),
+                    ImGuiInputTextFlags_ReadOnly);
+            }
+
+            // color source
+            if (m_imgSource == ImageSource::Color) {
+                if (ImGui::ColorEdit4("", m_imgColor)) {
+                    requestUpdateSource();
+                }
+            }
+
             ImGui::Text("Working Resolution: %dx%d", m_imgWidth, m_imgHeight);
             ImGui::TreePop();
         }

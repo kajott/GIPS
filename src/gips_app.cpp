@@ -113,7 +113,6 @@ int App::run(int argc, char *argv[]) {
         return 1;
     }
     GLutil::enableDebugMessages();
-    glClearColor(0.125f, 0.125f, 0.125f, 1.0f);
 
     ImGui::CreateContext();
     m_io = &ImGui::GetIO();
@@ -127,6 +126,8 @@ int App::run(int argc, char *argv[]) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_2D, 0);
     GLutil::checkError("texture setup");
+
+    m_helperFBO.init();
 
     if (!m_pipeline.init()) {
         fprintf(stderr, "failed to initialize the main pipeline\n");
@@ -158,7 +159,7 @@ int App::run(int argc, char *argv[]) {
     }
     fs.free();
 
-    loadImage("");
+    loadPattern();
     for (int i = 1;  i < argc;  ++i) {
         handleInputFile(argv[i]);
     }
@@ -196,6 +197,7 @@ int App::run(int argc, char *argv[]) {
         // start display rendering
         GLutil::clearError();
         glViewport(0, 0, int(m_io->DisplaySize.x), int(m_io->DisplaySize.y));
+        glClearColor(0.125f, 0.125f, 0.125f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         // draw the main image
@@ -258,7 +260,7 @@ bool App::handleEvents(bool wait) {
                         break;
                     case SDLK_F5:
                         if (SDL_GetModState() & KMOD_CTRL) {
-                            loadImage(m_imgFilename);
+                            updateImage();
                         }
                         m_pipeline.reload();
                         break;
@@ -420,6 +422,12 @@ bool App::handlePCR() {
             }
             break;
 
+        case PipelineChangeRequest::Type::UpdateSource:
+            if (updateImage()) {
+                m_pipeline.markAsChanged();
+            }
+            break;
+
         default:
             break;
     }
@@ -430,8 +438,6 @@ bool App::handlePCR() {
     m_pcr.path.clear();
     return done;
 }
-
-///////////////////////////////////////////////////////////////////////////////
 
 void App::handleInputFile(const char* filename) {
     uint32_t extCode = StringUtil::extractExtCode(filename);
@@ -448,52 +454,74 @@ void App::handleInputFile(const char* filename) {
     }
 }
 
-bool App::loadImage(const std::string& filename) {
-    bool isLoaded = false;
-    uint8_t* image = nullptr;
-    int w = 0, h = 0;
-    if (filename.empty()) {
-        // create dummy image
-        w = m_targetImgWidth;
-        h = m_targetImgHeight;
-        #ifndef NDEBUG
-            fprintf(stderr, "creating %dx%d dummy image\n", w, h);
-        #endif
-        image = (uint8_t*)malloc(w * h * 4);
-        if (!image) { return false; }
-        auto p = image;
-        for (int y = 0;  y < h;  ++y) {
-            for (int x = 0;  x < w;  ++x) {
-                *p++ = uint8_t(x) ^ 255;
-                *p++ = uint8_t(y);
-                *p++ = uint8_t(x ^ y);
-                *p++ = 255;
-            }
-        }
-    } else {
-        // non-empty file name -> load image from file
-        #ifndef NDEBUG
-            fprintf(stderr, "loading image file '%s'\n", filename.c_str());
-        #endif
-        image = stbi_load(filename.c_str(), &w, &h, nullptr, 4);
-        if (!image) { return false; }
-        isLoaded = true;
-    }
-    // upload image
+///////////////////////////////////////////////////////////////////////////////
+
+bool App::uploadImageTexture(uint8_t* data, int width, int height, ImageSource src) {
     GLutil::clearError();
     glBindTexture(GL_TEXTURE_2D, m_imgTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-    if (GLutil::checkError("texture upload")) { return false; }
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    bool error = GLutil::checkError("texture upload");
     glBindTexture(GL_TEXTURE_2D, 0);
     glFlush();
     glFinish();
-    ::free(image);
-    m_imgWidth = w;
-    m_imgHeight = h;
-    m_imgLoaded = isLoaded;
-    m_pipeline.markAsChanged();
-    if (isLoaded) { m_imgFilename = filename; }
+    ::free(data);
+    m_imgWidth = width;
+    m_imgHeight = height;
+    m_imgSource = src;
+    return !error;
+}
+
+bool App::loadColor() {
+    if ((m_targetImgWidth != m_imgWidth) || (m_targetImgHeight != m_imgHeight)) {
+        if (!uploadImageTexture(nullptr, m_targetImgWidth, m_targetImgHeight, ImageSource::Color)) {
+            return false;
+        }
+    }
+    if (!m_helperFBO.begin(m_imgTex)) { return false; }
+    glClearColor(m_imgColor[0], m_imgColor[1], m_imgColor[2], m_imgColor[3]);
+    glClear(GL_COLOR_BUFFER_BIT);
+    m_helperFBO.end();
     return true;
+}
+
+bool App::loadImage(const char* filename) {
+    #ifndef NDEBUG
+        fprintf(stderr, "loading image file '%s'\n", filename);
+    #endif
+    int width = 0, height = 0;
+    uint8_t* data = stbi_load(filename, &width, &height, nullptr, 4);
+    if (!data) { return false; }
+    m_imgFilename = filename;
+    return uploadImageTexture(data, width, height, ImageSource::Image);
+}
+
+bool App::loadPattern() {
+    int w = m_targetImgWidth;
+    int h = m_targetImgHeight;
+    #ifndef NDEBUG
+        fprintf(stderr, "creating %dx%d dummy image\n", w, h);
+    #endif
+    uint8_t* image = (uint8_t*)malloc(w * h * 4);
+    if (!image) { return false; }
+    auto p = image;
+    for (int y = 0;  y < h;  ++y) {
+        for (int x = 0;  x < w;  ++x) {
+            *p++ = uint8_t(x) ^ 255;
+            *p++ = uint8_t(y);
+            *p++ = uint8_t(x ^ y);
+            *p++ = 255;
+        }
+    }
+    return uploadImageTexture(image, w, h, ImageSource::Pattern);
+}
+
+bool App::updateImage() {
+    switch (m_imgSource) {
+        case ImageSource::Color:   return loadColor();
+        case ImageSource::Image:   return loadImage(m_imgFilename.c_str());
+        case ImageSource::Pattern: return loadPattern();
+        default: return false;
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

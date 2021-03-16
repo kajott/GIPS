@@ -6,8 +6,8 @@
 
 #include <SDL.h>
 #include "gl_header.h"
-#include "imgui.h"
 #include "gl_util.h"
+#include "imgui.h"
 
 #include "string_util.h"
 
@@ -16,6 +16,12 @@
 namespace GIPS {
 
 ///////////////////////////////////////////////////////////////////////////////
+
+enum class ImageSource {
+    Color,
+    Image,
+    Pattern,
+};
 
 class App {
 private:
@@ -33,8 +39,9 @@ private:
 
     // source image
     GLuint m_imgTex = 0;
+    ImageSource m_imgSource = ImageSource::Color;
+    GLfloat m_imgColor[4] = { 0.1f, 0.4f, 0.7f, 1.0f };
     std::string m_imgFilename;
-    bool m_imgLoaded = false;
     int m_targetImgWidth = 768;
     int m_targetImgHeight = 576;
     int m_imgWidth = 0;
@@ -44,6 +51,7 @@ private:
     GLutil::Shader m_vertexShader;
     GLutil::Program m_imgProgram;
     GLint m_imgProgramAreaLoc = -1;
+    GLutil::FBO m_helperFBO;
 
     // the main event of the show
     Pipeline m_pipeline;
@@ -71,6 +79,7 @@ private:
             ReloadNode,
             RemoveNode,
             MoveNode,
+            UpdateSource,
         } type = Type::None;
         int nodeIndex = 0;    //!< node index (1-based) for all operations
         int targetIndex = 0;  //!< target index (for MoveNode only)
@@ -81,7 +90,11 @@ private:
     bool handlePCR();
     void drawUI();
 
-    bool loadImage(const std::string& filename);
+    bool uploadImageTexture(uint8_t* data, int width, int height, ImageSource src);
+    bool loadColor();
+    bool loadImage(const char* filename);
+    bool loadPattern();
+    bool updateImage();
 
     //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //
 
@@ -112,6 +125,8 @@ public:
         { m_pcr.type = PipelineChangeRequest::Type::RemoveNode; m_pcr.nodeIndex = nodeIndex; }
     inline void requestMoveNode(int fromIndex, int toIndex)
         { m_pcr.type = PipelineChangeRequest::Type::MoveNode; m_pcr.nodeIndex = fromIndex; m_pcr.targetIndex = toIndex; }
+    inline void requestUpdateSource()
+        { m_pcr.type = PipelineChangeRequest::Type::UpdateSource; }
 
     static bool isShaderFile(uint32_t extCode);
     static inline bool isShaderFile(const char* filename)
