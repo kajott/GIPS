@@ -127,7 +127,7 @@ bool Pipeline::init() {
     "\n" "}"
     "\n");
 
-    glGenFramebuffers(1, &m_fbo);
+    m_fbo.init();
     glGenTextures(2, m_tex);
     for (int i = 0;  i < 2;  ++i) {
         glBindTexture(GL_TEXTURE_2D, m_tex[i]);
@@ -178,16 +178,14 @@ void Pipeline::render(GLuint srcTex, int width, int height, int maxNodes) {
             // select output buffer to use
             GLuint outTex = (m_resultTex == m_tex[0]) ? m_tex[1] : m_tex[0];
 
-            // prepare FBO for rendering
+            // prepare FBO, texture and program for rendering
             GLutil::clearError();
-            glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, outTex, 0);
-            #ifndef NDEBUG
-                GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-                if (status != GL_FRAMEBUFFER_COMPLETE) {
-                    fprintf(stderr, "Error: framebuffer isn't complete (status 0x%04X)\n", status);
-                }
-            #endif
+            if (!m_fbo.begin(outTex)) {
+                #ifndef NDEBUG
+                    fprintf(stderr, "Error: framebuffer isn't complete (status 0x%04X)\n", m_fbo.status);
+                #endif
+                continue;
+            }
             glBindTexture(GL_TEXTURE_2D, m_resultTex);
             pass.program.use();
             GLutil::checkError("FBO/tex/shader setup");
@@ -251,8 +249,7 @@ void Pipeline::render(GLuint srcTex, int width, int height, int maxNodes) {
             // "unprepare" everything
             glUseProgram(0);
             glBindTexture(GL_TEXTURE_2D, 0);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 0, 0, 0);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            m_fbo.end();
             GLutil::checkError("FBO/tex/shader teardown");
 
             // set result to output buffer

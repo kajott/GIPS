@@ -224,4 +224,37 @@ bool Program::link(GLuint vs, GLuint fs) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+bool FBO::init() {
+    if (!initialized) { return false; }
+    if (id) { return true; }
+    glGenFramebuffers(1, &id);
+    return (id != 0);
+}
+
+void FBO::free() {
+    if (initialized && id) {
+        end();
+        glDeleteFramebuffers(1, &id);
+        id = 0;
+    }
+}
+
+bool FBO::begin(GLuint tex) {
+    if (!initialized || !id) { return false; }
+    end();
+    glBindFramebuffer(GL_FRAMEBUFFER, id);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+    status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    return (status == GL_FRAMEBUFFER_COMPLETE);
+}
+
+void FBO::end() {
+    if (!initialized || !id || !status) { return; }
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 0, 0, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    status = 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 } // namespace GLutil

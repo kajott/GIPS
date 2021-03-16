@@ -63,4 +63,17 @@ public:
     inline operator GLuint() const { return id; }
 };
 
+class FBO {
+public:
+    GLuint id = 0;
+    GLenum status = 0;
+    bool init();
+    void free();
+    bool begin(GLuint tex);
+    void end();
+    inline FBO() {}
+    inline ~FBO() { free(); }
+    inline operator GLuint() const { return id; }
+};
+
 }  // namespace GLutil

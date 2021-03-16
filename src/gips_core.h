@@ -108,7 +108,7 @@ class Pipeline {
     int m_width = 0;
     int m_height = 0;
     GLuint m_tex[2] = {0,0};
-    GLuint m_fbo = 0;
+    GLutil::FBO m_fbo;
     bool m_pipelineChanged = true;
     GLutil::Shader m_vs;
     GLuint m_resultTex = 0;
