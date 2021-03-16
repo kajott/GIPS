@@ -36,12 +36,6 @@ else ()
     find_package (SDL2 REQUIRED)
 endif ()
 
-if (WIN32)
-    set (PLATFORM_SOURCES src/file_util_win32.cpp)
-else ()
-    set (PLATFORM_SOURCES src/file_util_posix.cpp)
-endif ()
-
 add_executable (gips
     src/libs.c
     src/main.cpp
@@ -60,8 +54,13 @@ add_executable (gips
     thirdparty/imgui/imgui_draw.cpp
     thirdparty/imgui/backends/imgui_impl_sdl.cpp
     thirdparty/imgui/backends/imgui_impl_opengl3.cpp
-    ${PLATFORM_SOURCES}
 )
+
+if (WIN32)
+    target_sources (gips PRIVATE src/file_util_win32.cpp gips.manifest)
+else ()
+    target_sources (gips PRIVATE src/file_util_posix.cpp)
+endif ()
 
 target_include_directories (gips PRIVATE
     src
