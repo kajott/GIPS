@@ -109,7 +109,7 @@ void enableDebugMessages() {
         glDebugMessageCallbackARB(debugCallback, nullptr);
     #endif
 #else
-    (void)GLdebugCallback;
+    (void)&debugCallback;
 #endif
 }
 

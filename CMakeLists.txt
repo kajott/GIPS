@@ -58,6 +58,9 @@ add_executable (gips
 
 if (WIN32)
     target_sources (gips PRIVATE src/file_util_win32.cpp gips.manifest)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        set_target_properties (gips PROPERTIES WIN32_EXECUTABLE ON)
+    endif ()
 else ()
     target_sources (gips PRIVATE src/file_util_posix.cpp)
 endif ()
