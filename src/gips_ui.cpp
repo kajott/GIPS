@@ -2,6 +2,9 @@
 
 #include "imgui.h"
 
+#define PFD_SKIP_IMPLEMENTATION 1
+#include "portable-file-dialogs.h"
+
 #include "string_util.h"
 #include "dirlist.h"
 
@@ -254,6 +257,19 @@ void GIPS::App::drawUI() {
         if (ImGui::BeginPopup("add_filter")) {
             ShaderBrowserMenu(*this, 0, getShaderDir());
             ImGui::EndPopup();
+        }
+
+        // "Save" button
+        ImGui::SameLine();
+        if (ImGui::Button("Save ...")) {
+            auto path = pfd::save_file(
+                "Save Image", m_lastSaveFilename,
+                { "Image Files", "*.jpg *.png *.bmp *.tga",
+                  "All Files", "*" }
+            ).result();
+            if (!path.empty()) {
+                requestSaveResult(path.c_str());
+            }
         }
     }   // END main window
     ImGui::End();

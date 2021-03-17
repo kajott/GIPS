@@ -37,7 +37,6 @@ else ()
 endif ()
 
 add_executable (gips
-    src/libs.c
     src/main.cpp
     src/gips_app.cpp
     src/gips_ui.cpp
@@ -54,6 +53,8 @@ add_executable (gips
     thirdparty/imgui/imgui_draw.cpp
     thirdparty/imgui/backends/imgui_impl_sdl.cpp
     thirdparty/imgui/backends/imgui_impl_opengl3.cpp
+    src/libs_c.c
+    src/libs_cpp.cpp
 )
 
 if (WIN32)
@@ -72,6 +73,7 @@ target_include_directories (gips PRIVATE
     thirdparty/imgui
     thirdparty/imgui/backends
     thirdparty/stb
+    thirdparty/pfd
 )
 
 # make the binary appear in the project's root directory

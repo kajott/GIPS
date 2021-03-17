@@ -42,6 +42,7 @@ private:
     ImageSource m_imgSource = ImageSource::Color;
     GLfloat m_imgColor[4] = { 0.1f, 0.4f, 0.7f, 1.0f };
     std::string m_imgFilename;
+    std::string m_lastSaveFilename;
     int m_targetImgWidth = 768;
     int m_targetImgHeight = 576;
     int m_imgWidth = 0;
@@ -80,10 +81,11 @@ private:
             RemoveNode,
             MoveNode,
             UpdateSource,
+            SaveResult,
         } type = Type::None;
         int nodeIndex = 0;    //!< node index (1-based) for all operations
         int targetIndex = 0;  //!< target index (for MoveNode only)
-        std::string path;     //!< path to load (for LoadNode only)
+        std::string path;     //!< path to load (for LoadNode and SaveResult only)
     } m_pcr;
 
     bool handleEvents(bool wait);
@@ -95,6 +97,8 @@ private:
     bool loadImage(const char* filename);
     bool loadPattern();
     bool updateImage();
+
+    bool saveResult(const char* filename);
 
     //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //
 
@@ -127,6 +131,11 @@ public:
         { m_pcr.type = PipelineChangeRequest::Type::MoveNode; m_pcr.nodeIndex = fromIndex; m_pcr.targetIndex = toIndex; }
     inline void requestUpdateSource()
         { m_pcr.type = PipelineChangeRequest::Type::UpdateSource; }
+    inline void requestSaveResult(const char* filename)
+        { m_pcr.type = PipelineChangeRequest::Type::SaveResult; m_pcr.path = filename; }
+
+    inline const char* getImageFilename() const { return m_imgFilename.c_str(); }
+    inline const char* getLastSaveFilename() const { return m_lastSaveFilename.c_str(); }
 
     static bool isShaderFile(uint32_t extCode);
     static inline bool isShaderFile(const char* filename)
@@ -135,6 +144,10 @@ public:
     static bool isImageFile(uint32_t extCode);
     static inline bool isImageFile(const char* filename)
         { return isImageFile(StringUtil::extractExtCode(filename)); }
+
+    static bool isSaveImageFile(uint32_t extCode);
+    static inline bool isSaveImageFile(const char* filename)
+        { return isSaveImageFile(StringUtil::extractExtCode(filename)); }
 };
 
 ///////////////////////////////////////////////////////////////////////////////

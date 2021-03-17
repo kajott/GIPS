@@ -15,6 +15,7 @@
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
 #include "stb_image.h"
+#include "stb_image_write.h"
 
 #include "string_util.h"
 #include "file_util.h"
@@ -43,6 +44,15 @@ bool App::isImageFile(uint32_t extCode) {
         || (extCode == StringUtil::makeExtCode("pgm"))
         || (extCode == StringUtil::makeExtCode("ppm"))
         || (extCode == StringUtil::makeExtCode("pnm"));
+}
+
+bool App::isSaveImageFile(uint32_t extCode) {
+    return (extCode == StringUtil::makeExtCode("jpg"))
+        || (extCode == StringUtil::makeExtCode("jpeg"))
+        || (extCode == StringUtil::makeExtCode("jpe"))
+        || (extCode == StringUtil::makeExtCode("png"))
+        || (extCode == StringUtil::makeExtCode("tga"))
+        || (extCode == StringUtil::makeExtCode("bmp"));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -192,6 +202,13 @@ int App::run(int argc, char *argv[]) {
         // image processing
         if (m_pipeline.changed()) {
             m_pipeline.render(m_imgTex, m_imgWidth, m_imgHeight, m_showIndex);
+        }
+
+        // request to save?
+        if (m_pcr.type == PipelineChangeRequest::Type::SaveResult) {
+            saveResult(m_pcr.path.c_str());
+            m_pcr.type = PipelineChangeRequest::Type::None;
+            m_pcr.path.clear();
         }
 
         // start display rendering
@@ -428,6 +445,12 @@ bool App::handlePCR() {
             }
             break;
 
+        case PipelineChangeRequest::Type::SaveResult:
+            if (isSaveImageFile(m_pcr.path.c_str())) {
+                return true;  // don't clear the PCR yet
+            }
+            break;
+
         default:
             break;
     }
@@ -522,6 +545,73 @@ bool App::updateImage() {
         case ImageSource::Pattern: return loadPattern();
         default: return false;
     }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+bool App::saveResult(const char* filename) {
+    if (!filename || !filename[0]) { return false;} 
+    // assumes that filename is already validated to be one of the supported
+    // formats! (otherwise we'll fail, and very lately so!)
+    #ifndef NDEBUG
+        fprintf(stderr, "saving '%s'\n", filename);
+    #endif
+    m_lastSaveFilename = filename;
+
+    // create staging texture
+    GLuint tex;
+    GLutil::clearError();
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_imgWidth, m_imgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    if (GLutil::checkError("saving texture creation")) { return false; }
+    uint8_t *data = (uint8_t*) malloc(m_imgWidth * m_imgHeight * 4);
+    if (!data) { return false; }
+
+    // copy result into staging texture
+    m_imgProgram.use();
+    glBindTexture(GL_TEXTURE_2D, m_pipeline.resultTex());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    float scaleX =  2.0f / m_io->DisplaySize.x;
+    float scaleY = -2.0f / m_io->DisplaySize.y;
+    glUniform4f(m_imgProgramAreaLoc, -1.0f, -1.0f, 2.0f, 2.0f);
+    glViewport(0, 0, m_imgWidth, m_imgHeight);
+    if (GLutil::checkError("saving render preparation")) { ::free(data); return false; }
+    m_helperFBO.begin(tex);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    m_helperFBO.end();
+    if (GLutil::checkError("saving render draw operation")) { ::free(data); return false; }
+
+    // read and delete staging texture
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDeleteTextures(1, &tex);
+    if (GLutil::checkError("saving texture readback")) { ::free(data); return false; }
+
+    // save the image
+    int res;
+    switch (StringUtil::extractExtCode(filename)) {
+        case StringUtil::makeExtCode("jpg"):
+        case StringUtil::makeExtCode("jpeg"):
+        case StringUtil::makeExtCode("jpe"):
+            res = stbi_write_jpg(filename, m_imgWidth, m_imgHeight, 4, data, 98);
+            break;
+        case StringUtil::makeExtCode("png"):
+            res = stbi_write_png(filename, m_imgWidth, m_imgHeight, 4, data, 0);
+            break;
+        case StringUtil::makeExtCode("tga"):
+            res = stbi_write_tga(filename, m_imgWidth, m_imgHeight, 4, data);
+            break;
+        case StringUtil::makeExtCode("bmp"):
+            res = stbi_write_bmp(filename, m_imgWidth, m_imgHeight, 4, data);
+            break;
+        default:
+            ::free(data); return false;
+    }
+    ::free(data);
+    return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
