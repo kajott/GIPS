@@ -161,12 +161,17 @@ void GIPS::App::drawUI() {
 
             // image source
             if (m_imgSource == ImageSource::Image) {
-                ImGui::Text("drag & drop an image to load it");
-                ImGui::InputTextMultiline("filename",
-                    const_cast<char*>(m_imgFilename.c_str()),
-                    m_imgFilename.size(),
-                    ImVec2(-FLT_MIN, ImGui::GetFrameHeight() + 0*ImGui::GetTextLineHeight()),
-                    ImGuiInputTextFlags_ReadOnly);
+                if (ImGui::Button("Load ...")) {
+                    auto path = pfd::open_file("Load Image", m_imgFilename.c_str(),
+                        { "Image Files", "*.jpg *.jpeg *.png *.bmp *.tga *.pgm *.ppm *.gif *.psd",
+                          "All Files", "*" }
+                    ).result();
+                    if (!path.empty()) {
+                        requestLoadImage(path[0].c_str());
+                    }
+                }
+                ImGui::SameLine();
+                ImGui::Text("%s", m_imgFilename.c_str());
             }
 
             // color source

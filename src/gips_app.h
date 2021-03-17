@@ -81,6 +81,7 @@ private:
             RemoveNode,
             MoveNode,
             UpdateSource,
+            LoadImage,
             SaveResult,
         } type = Type::None;
         int nodeIndex = 0;    //!< node index (1-based) for all operations
@@ -131,11 +132,10 @@ public:
         { m_pcr.type = PipelineChangeRequest::Type::MoveNode; m_pcr.nodeIndex = fromIndex; m_pcr.targetIndex = toIndex; }
     inline void requestUpdateSource()
         { m_pcr.type = PipelineChangeRequest::Type::UpdateSource; }
+    inline void requestLoadImage(const char* filename)
+        { m_pcr.type = PipelineChangeRequest::Type::LoadImage; m_pcr.path = filename; }
     inline void requestSaveResult(const char* filename)
         { m_pcr.type = PipelineChangeRequest::Type::SaveResult; m_pcr.path = filename; }
-
-    inline const char* getImageFilename() const { return m_imgFilename.c_str(); }
-    inline const char* getLastSaveFilename() const { return m_lastSaveFilename.c_str(); }
 
     static bool isShaderFile(uint32_t extCode);
     static inline bool isShaderFile(const char* filename)

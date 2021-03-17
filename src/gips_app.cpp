@@ -445,6 +445,12 @@ bool App::handlePCR() {
             }
             break;
 
+        case PipelineChangeRequest::Type::LoadImage:
+            if (loadImage(m_pcr.path.c_str())) {
+                m_pipeline.markAsChanged();
+            }
+            break;
+
         case PipelineChangeRequest::Type::SaveResult:
             if (isSaveImageFile(m_pcr.path.c_str())) {
                 return true;  // don't clear the PCR yet
@@ -511,10 +517,10 @@ bool App::loadImage(const char* filename) {
     #ifndef NDEBUG
         fprintf(stderr, "loading image file '%s'\n", filename);
     #endif
+    m_imgFilename = filename;
     int width = 0, height = 0;
     uint8_t* data = stbi_load(filename, &width, &height, nullptr, 4);
     if (!data) { return false; }
-    m_imgFilename = filename;
     return uploadImageTexture(data, width, height, ImageSource::Image);
 }
 
