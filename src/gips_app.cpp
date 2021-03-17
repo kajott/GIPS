@@ -90,7 +90,7 @@ int App::run(int argc, char *argv[]) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS,        SDL_GL_CONTEXT_DEBUG_FLAG);
     #endif
 
-    m_window = SDL_CreateWindow("GIPS",
+    m_window = SDL_CreateWindow("GLSL Image Processing System",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         1080, 720,
         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);

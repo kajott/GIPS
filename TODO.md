@@ -1,7 +1,5 @@
 # TODOs
 
-(Skipping the obvious "make things work at all" ones here.)
-
 - [X] multi-pass filters
 - [X] load filters from menu
 - [ ] load filters from ZIP file
@@ -21,3 +19,10 @@
 - [ ] error reporting in the UI
 - [ ] scale input image
 - [ ] multiple input patterns
+- [ ] code documentation
+- [ ] simple build scripts
+- [ ] middle-click + drag to move the image
+- [ ] re-arrange filters with "move to >>" menu
+
+And finally:
+- [ ] version 2 with arbitrary node graphs
