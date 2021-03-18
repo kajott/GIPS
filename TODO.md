@@ -23,6 +23,9 @@
 - [ ] simple build scripts
 - [ ] middle-click + drag to move the image
 - [ ] re-arrange filters with "move to >>" menu
+- [ ] don't accept global tokens in parameter comments
+- [ ] allow non-lowercase unit names
+- [ ] angle parameter type
 
 And finally:
 - [ ] version 2 with arbitrary node graphs

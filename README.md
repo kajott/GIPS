@@ -17,7 +17,7 @@ Every GPU made after 2007 should support that;
 on Windows systems, however, the vendor drivers must be installed.
 (The drivers installed automatically by Windows often don't support OpenGL.)
 
------------------------------------
+
 
 ## Usage Tips
 
@@ -49,7 +49,7 @@ Here are some specific hints for the non-obvious things:
 - Press F5 to reload the shaders.
 - Press Ctrl+F5 to reload the shaders and the input image.
 
------------------------------------
+
 
 ## Limitations
 
@@ -61,7 +61,7 @@ Currently, GIPS is in "Minimum Viable Prototype" state; this means:
 - no tiling: only images up to the maximum texture size supported by the GPU
   can be processed
 
------------------------------------
+
 
 ## Building
 
@@ -121,7 +121,7 @@ and use the same four commands as on Linux above.
 `-DCMAKE_C_COMPILER=cl.exe -DCMAKE_CXX_COMPILER=cl.exe`
 must also be specified when calling CMake.)
 
------------------------------------
+
 
 ## Credits
 
