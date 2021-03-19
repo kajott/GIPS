@@ -364,6 +364,8 @@ void App::zoomAt(int x, int y, int delta) {
         // zoom in
         if (m_imgZoom >= 1.0f) {
             m_imgZoom = std::ceil(m_imgZoom + 0.5f);
+        } else if (m_imgZoom >= 0.5f) {
+            m_imgZoom = 1.0f;  // avoid overflow in computation below
         } else {
             m_imgZoom = 1.0f / std::floor(1.0f / m_imgZoom - 0.5f);
         }
