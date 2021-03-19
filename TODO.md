@@ -17,7 +17,7 @@
 - [X] dynamic scaling of the editing precision
 - [ ] don't create staging texture if format is already GL_RGBA8
 - [ ] error reporting in the UI
-- [ ] scale input image
+- [X] scale input image
 - [ ] multiple input patterns
 - [ ] code documentation
 - [ ] simple build scripts

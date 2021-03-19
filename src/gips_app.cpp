@@ -16,6 +16,7 @@
 #include "imgui_impl_opengl3.h"
 #include "stb_image.h"
 #include "stb_image_write.h"
+#include "stb_image_resize.h"
 
 #include "string_util.h"
 #include "file_util.h"
@@ -520,10 +521,29 @@ bool App::loadImage(const char* filename) {
         fprintf(stderr, "loading image file '%s'\n", filename);
     #endif
     m_imgFilename = filename;
-    int width = 0, height = 0;
-    uint8_t* data = stbi_load(filename, &width, &height, nullptr, 4);
-    if (!data) { return false; }
-    return uploadImageTexture(data, width, height, ImageSource::Image);
+    int rawWidth = 0, rawHeight = 0;
+    uint8_t* rawData = stbi_load(filename, &rawWidth, &rawHeight, nullptr, 4);
+    if (!rawData) { return false; }
+    if (!m_imgResize || ((rawWidth <= m_targetImgWidth) && (rawHeight <= m_targetImgHeight))) {
+        return uploadImageTexture(rawData, rawWidth, rawHeight, ImageSource::Image);
+    }
+    int scaledWidth  = m_targetImgWidth;
+    int scaledHeight = (rawHeight * scaledWidth + (rawWidth / 2)) / rawWidth;
+    if (scaledHeight > m_targetImgHeight) {
+        scaledHeight = m_targetImgHeight;
+        scaledWidth = (rawWidth * scaledHeight + (rawHeight / 2)) / rawHeight;
+    }
+    #ifndef NDEBUG
+        fprintf(stderr, "downscaling %dx%d -> %dx%d\n", rawWidth, rawHeight, scaledWidth, scaledHeight);
+    #endif
+    uint8_t* scaledData = (uint8_t*) malloc(scaledWidth * scaledHeight * 4);
+    if (!scaledData) { ::free(rawData); return false; }
+    if (!stbir_resize_uint8(
+           rawData,    rawWidth,    rawHeight, 0,
+        scaledData, scaledWidth, scaledHeight, 0,
+        4)) { ::free(rawData); return false; }
+    ::free(rawData);
+    return uploadImageTexture(scaledData, scaledWidth, scaledHeight, ImageSource::Image);
 }
 
 bool App::loadPattern() {

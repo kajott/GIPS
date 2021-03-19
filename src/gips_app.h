@@ -43,10 +43,13 @@ private:
     GLfloat m_imgColor[4] = { 0.1f, 0.4f, 0.7f, 1.0f };
     std::string m_imgFilename;
     std::string m_lastSaveFilename;
-    int m_targetImgWidth = 768;
-    int m_targetImgHeight = 576;
+    int m_targetImgWidth   = 768;
+    int m_targetImgHeight  = 576;
+    int m_editTargetWidth  = 768;
+    int m_editTargetHeight = 576;
     int m_imgWidth = 0;
     int m_imgHeight = 0;
+    bool m_imgResize = false;
 
     // rendering resources
     GLutil::Shader m_vertexShader;

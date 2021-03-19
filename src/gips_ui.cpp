@@ -172,6 +172,9 @@ void GIPS::App::drawUI() {
                 }
                 ImGui::SameLine();
                 ImGui::Text("%s", m_imgFilename.c_str());
+                if (ImGui::Checkbox("resize to target size if larger", &m_imgResize)) {
+                    requestUpdateSource();
+                }
             }
 
             // color source
@@ -181,7 +184,33 @@ void GIPS::App::drawUI() {
                 }
             }
 
-            ImGui::Text("Working Resolution: %dx%d", m_imgWidth, m_imgHeight);
+            // target size
+            if ((m_imgSource == ImageSource::Image) && !m_imgResize) {
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+            }
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Target Size:");
+            ImGui::SameLine();
+            ImGui::PushItemWidth(40.0f);
+            ImGui::InputInt("##tw", &m_editTargetWidth, 0);
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+            ImGui::TextUnformatted("x");
+            ImGui::SameLine();
+            ImGui::PushItemWidth(40.0f);
+            ImGui::InputInt("##th", &m_editTargetHeight, 0);
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+            if (ImGui::Button("Set")) {
+                m_targetImgWidth = m_editTargetWidth;
+                m_targetImgHeight = m_editTargetHeight;
+                requestUpdateSource();
+            }
+            if ((m_imgSource == ImageSource::Image) && !m_imgResize) {
+                ImGui::PopStyleVar(1);
+            }
+
+            ImGui::Text("Current Size: %dx%d", m_imgWidth, m_imgHeight);
             ImGui::TreePop();
         }
 
