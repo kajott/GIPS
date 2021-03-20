@@ -18,7 +18,7 @@
 - [ ] don't create staging texture if format is already GL_RGBA8
 - [ ] error reporting in the UI
 - [X] scale input image
-- [ ] multiple input patterns
+- [X] multiple input patterns
 - [ ] code documentation
 - [ ] simple build scripts
 - [ ] middle-click + drag to move the image
@@ -26,6 +26,7 @@
 - [ ] don't accept global tokens in parameter comments
 - [ ] allow non-lowercase unit names
 - [ ] angle parameter type
+- [ ] logo pattern
 
 And finally:
 - [ ] version 2 with arbitrary node graphs

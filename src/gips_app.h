@@ -41,15 +41,17 @@ private:
     GLuint m_imgTex = 0;
     ImageSource m_imgSource = ImageSource::Color;
     GLfloat m_imgColor[4] = { 0.1f, 0.4f, 0.7f, 1.0f };
+    int m_imgPatternID = 0;
+    bool m_imgPatternNoAlpha = true;
+    bool m_imgResize = false;
     std::string m_imgFilename;
     std::string m_lastSaveFilename;
-    int m_targetImgWidth   = 768;
-    int m_targetImgHeight  = 576;
-    int m_editTargetWidth  = 768;
-    int m_editTargetHeight = 576;
+    int m_targetImgWidth   = 960;
+    int m_targetImgHeight  = 640;
+    int m_editTargetWidth  = 960;
+    int m_editTargetHeight = 640;
     int m_imgWidth = 0;
     int m_imgHeight = 0;
-    bool m_imgResize = false;
 
     // rendering resources
     GLutil::Shader m_vertexShader;

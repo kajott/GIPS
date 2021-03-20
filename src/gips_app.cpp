@@ -21,6 +21,8 @@
 #include "string_util.h"
 #include "file_util.h"
 
+#include "patterns.h"
+
 #include "gips_app.h"
 
 namespace GIPS {
@@ -547,23 +549,29 @@ bool App::loadImage(const char* filename) {
 }
 
 bool App::loadPattern() {
-    int w = m_targetImgWidth;
-    int h = m_targetImgHeight;
+    if ((m_imgPatternID < 0) || (m_imgPatternID >= NumPatterns)) {
+        #ifndef NDEBUG
+            fprintf(stderr, "requested invalid pattern ID %d\n", m_imgPatternID);
+        #endif
+        return false;
+    }
+    const PatternDefinition& pat = Patterns[m_imgPatternID];
     #ifndef NDEBUG
-        fprintf(stderr, "creating %dx%d dummy image\n", w, h);
+        fprintf(stderr, "creating %dx%d '%s' pattern image %s alpha\n",
+                m_targetImgWidth, m_targetImgHeight,
+                pat.name, m_imgPatternNoAlpha ? "without" : "with");
     #endif
-    uint8_t* image = (uint8_t*)malloc(w * h * 4);
-    if (!image) { return false; }
-    auto p = image;
-    for (int y = 0;  y < h;  ++y) {
-        for (int x = 0;  x < w;  ++x) {
-            *p++ = uint8_t(x) ^ 255;
-            *p++ = uint8_t(y);
-            *p++ = uint8_t(x ^ y);
-            *p++ = 255;
+    uint8_t* data = (uint8_t*)malloc(m_targetImgWidth * m_targetImgHeight * 4);
+    if (!data) { return false; }
+    pat.render(data, m_targetImgWidth, m_targetImgHeight, !m_imgPatternNoAlpha);
+    if (m_imgPatternNoAlpha && !pat.alwaysWritesAlpha) {
+        uint8_t *p = &data[3];
+        for (int i = m_targetImgWidth * m_targetImgHeight;  i;  --i) {
+            *p = 0xFF;
+            p += 4;
         }
     }
-    return uploadImageTexture(image, w, h, ImageSource::Pattern);
+    return uploadImageTexture(data, m_targetImgWidth, m_targetImgHeight, ImageSource::Pattern);
 }
 
 bool App::updateImage() {

@@ -8,6 +8,8 @@
 #include "string_util.h"
 #include "dirlist.h"
 
+#include "patterns.h"
+
 #include "gips_app.h"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -180,6 +182,22 @@ void GIPS::App::drawUI() {
             // color source
             if (m_imgSource == ImageSource::Color) {
                 if (ImGui::ColorEdit4("", m_imgColor)) {
+                    requestUpdateSource();
+                }
+            }
+
+            // pattern source
+            if (m_imgSource == ImageSource::Pattern) {
+                struct FuncWrapper {
+                    static bool getPatternName(void*, int idx, const char **p_str) {
+                        *p_str = Patterns[idx].name;
+                        return true;
+                    }
+                };
+                if (ImGui::Combo("##pat", &m_imgPatternID, &FuncWrapper::getPatternName, nullptr, NumPatterns)) {
+                    requestUpdateSource();
+                }
+                if (ImGui::Checkbox("opaque alpha channel", &m_imgPatternNoAlpha)) {
                     requestUpdateSource();
                 }
             }

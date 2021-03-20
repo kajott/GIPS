@@ -45,6 +45,7 @@ add_executable (gips
     src/gl_util.cpp
     src/string_util.cpp
     src/dirlist.cpp
+    src/patterns.cpp
     thirdparty/glad/src/glad.c
     thirdparty/imgui/imgui.cpp
     thirdparty/imgui/imgui_demo.cpp
