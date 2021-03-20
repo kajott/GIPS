@@ -532,6 +532,10 @@ bool App::loadColor() {
 }
 
 bool App::loadImage(const char* filename) {
+    if (!filename || !filename[0]) {
+        m_imgFilename.clear();
+        return false;
+    }
     #ifndef NDEBUG
         fprintf(stderr, "loading image file '%s'\n", filename);
     #endif
