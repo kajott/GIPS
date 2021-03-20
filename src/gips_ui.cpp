@@ -169,7 +169,6 @@ void GIPS::App::drawUI() {
         }
     }
 
-
     // main window begin
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->WorkPos, ImGuiCond_Once, ImVec2(0.0f, 0.0f));
     if (ImGui::Begin("Filters")) {
@@ -336,7 +335,7 @@ void GIPS::App::drawUI() {
         }
 
         // "Add Filter" button
-        if (ImGui::Button("Add Filter ...")) {
+        if (ImGui::Button("Add Filter")) {
             ImGui::OpenPopup("add_filter");
         }
         if (ImGui::BeginPopup("add_filter")) {
@@ -346,7 +345,7 @@ void GIPS::App::drawUI() {
 
         // "Save" button
         ImGui::SameLine();
-        if (ImGui::Button("Save ...")) {
+        if (ImGui::Button("Save Result")) {
             auto path = pfd::save_file(
                 "Save Image", m_lastSaveFilename,
                 { "Image Files", "*.jpg *.png *.bmp *.tga",
@@ -356,8 +355,30 @@ void GIPS::App::drawUI() {
                 requestSaveResult(path.c_str());
             }
         }
+
+        // info window open button
+        ImGui::SameLine();
+        if (ImGui::Button("Info")) {
+            m_showInfo = true;
+        }
     }   // END main window
     ImGui::End();
+
+    // info window
+    if (m_showInfo) {
+        const ImGuiViewport* vp = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(ImVec2(
+            vp->WorkPos.x + 0.5f * vp->WorkSize.x,
+            vp->WorkPos.y + 0.5f * vp->WorkSize.y
+        ), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
+        ImGui::Begin("Information", &m_showInfo,
+                     ImGuiWindowFlags_NoCollapse |
+                     ImGuiWindowFlags_AlwaysAutoResize |
+                     ImGuiWindowFlags_NoResize);
+        ImGui::TextUnformatted("GIPS - The GLSL Imaging Processing System");
+        ImGui::TextUnformatted("(C) 2021 Martin J. Fiedler");
+        ImGui::End();
+    }   // END info window
 }
 
 ///////////////////////////////////////////////////////////////////////////////

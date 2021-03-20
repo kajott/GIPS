@@ -36,6 +36,7 @@ private:
     ImGuiIO* m_io = nullptr;
     bool m_active = true;
     bool m_showDemo = false;
+    bool m_showInfo = false;
 
     // source image
     GLuint m_imgTex = 0;

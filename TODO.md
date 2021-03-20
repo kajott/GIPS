@@ -29,6 +29,7 @@
 - [ ] logo pattern
 - [ ] static SDL2 on Win32
 - [ ] use other, more battle-tested image loaders for PNG and JPEG
+- [ ] add hyperlink to project page in info window
 
 And finally:
 - [ ] version 2 with arbitrary node graphs
