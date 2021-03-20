@@ -2,8 +2,12 @@
 
 An image processing application that applies filters
 written in the OpenGL Shading Language (GLSL).
+
+This means two things:
+- Everything is processed on the GPU.
+- The image is updated in realtime when parameters change.
+
 Multiple filters can be combined into a pipeline.
-Everything is processed on the GPU.
 
 GIPS uses standard GLSL fragment shaders
 for all image processing operations,

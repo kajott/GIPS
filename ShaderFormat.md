@@ -110,7 +110,7 @@ it also scans all other comments for special tokens:
 - `@coord=<mode>`\
   Specify the coordinate system used for the position input parameters
   of the `run` and `pixel` functions:
-  - By default, i.e. if `@coord` is not set,
+  - By default, i.e. if `@coord` is not set or set to `@coord=none`,
     simple normalized coordinates without aspect correction are used,
     with (0.0, 0.0) on the upper-left corner of the image
     and (1.0, 1.0) on the lower-right corner.
@@ -137,7 +137,22 @@ Note that the tokens for configuring the coordinate system and filtering
 must be contained in comments **before** the `run` function.
 
 Thus, it's generally a good idea to use a comment with all options
-and a `@version` tag at the very beginning of the filter, like a header.
+and a `@version` tag at the very beginning of the filter, like a header:
+
+    // @gips_version=1 @coord=pixel @filter=off
+
+
+## Predefined Uniform Variables
+
+Other than the user-defined uniform variables, the GIPS boilerplate exposes
+the following variables:
+- `uniform vec2 gips_image_size`\
+  The image size in pixels.
+  Might be useful for custom coordinate computations in `@coord=none` mode,
+  if a coordinate system other than those supported by `@coord` is desired.
+- `uniform sampler2D gips_tex`\
+  The input texture. Note that it's always top-down
+  (i.e. (0,0) is on the upper-left corner).
 
 
 ## Multi-Pass Filters
