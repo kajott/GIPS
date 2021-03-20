@@ -186,6 +186,12 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
                     }
                     return !!param;
                 };
+                const auto needGlobal = [&] () -> bool {
+                    if (param) {
+                        err << "(GIPS) '@" << key << "' token is only valid inside a global comment\n";
+                    }
+                    return !param;
+                };
                 const auto needValue = [&] () -> bool {
                     if (!value) {
                         err << "(GIPS) '@" << key << "' token requires a value\n";
@@ -217,16 +223,16 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
                 } else if (isKey("color")  && needParam()) {
                     setParamType(GLSLToken::Vec3, ParameterType::RGB, false) ||
                     setParamType(GLSLToken::Vec4, ParameterType::RGBA);
-                } else if ((isKey("coord") || isKey("coords") || isKey("map")) && needValue()) {
+                } else if ((isKey("coord") || isKey("coords") || isKey("map")) && needGlobal() && needValue()) {
                          if (isValue("pixel")) { coordMode = CoordMapMode::Pixel; }
                     else if (isValue("none"))  { coordMode = CoordMapMode::None; }
                     else if (isValue("relative") || isValue("rel")) { coordMode = CoordMapMode::Relative; }
                     else { err << "(GIPS) unrecognized coordinate mapping mode '" << value << "'\n"; }
-                } else if ((isKey("filter") || isKey("filt")) && needValue()) {
+                } else if ((isKey("filter") || isKey("filt")) && needGlobal() && needValue()) {
                          if (isValue("1") || isValue("on")  || isValue("linear")  || isValue("bilinear")) { texFilter = true; }
                     else if (isValue("0") || isValue("off") || isValue("nearest") || isValue("point"))    { texFilter = false; }
                     else { err << "(GIPS) unrecognized texture filtering mode '" << value << "'\n"; }
-                } else if ((isKey("version") || isKey("gips_version")) && needNum()) {
+                } else if ((isKey("version") || isKey("gips_version")) && needGlobal() && needNum()) {
                     if (fval > MaxSupportedVersionCode) {
                         err << "(GIPS) shader requires GIPS version " << fval << ", but only " << MaxSupportedVersionCode << " is supported\n";
                         ::free(comment);
