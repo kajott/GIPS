@@ -172,6 +172,14 @@ int App::run(int argc, char *argv[]) {
     }
     fs.free();
 
+    GLint maxTex, maxVP[2];
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTex);
+    glGetIntegerv(GL_MAX_VIEWPORT_DIMS, maxVP);
+    m_imgMaxSize = std::min({maxTex, maxVP[0], maxVP[1]});
+    #ifndef NDEBUG
+        fprintf(stderr, "max tex size: %d, max VP size: %dx%d => max image size: %d\n", maxTex, maxVP[0], maxVP[1], m_imgMaxSize);
+    #endif
+
     loadPattern();
     for (int i = 1;  i < argc;  ++i) {
         handleInputFile(argv[i]);
@@ -531,13 +539,15 @@ bool App::loadImage(const char* filename) {
     int rawWidth = 0, rawHeight = 0;
     uint8_t* rawData = stbi_load(filename, &rawWidth, &rawHeight, nullptr, 4);
     if (!rawData) { return setError("could not read image file"); }
-    if (!m_imgResize || ((rawWidth <= m_targetImgWidth) && (rawHeight <= m_targetImgHeight))) {
+    int targetWidth  = m_imgResize ? m_targetImgWidth  : m_imgMaxSize;
+    int targetHeight = m_imgResize ? m_targetImgHeight : m_imgMaxSize;
+    if ((rawWidth <= targetWidth) && (rawHeight <= targetHeight)) {
         return uploadImageTexture(rawData, rawWidth, rawHeight, ImageSource::Image);
     }
-    int scaledWidth  = m_targetImgWidth;
+    int scaledWidth  = targetWidth;
     int scaledHeight = (rawHeight * scaledWidth + (rawWidth / 2)) / rawWidth;
-    if (scaledHeight > m_targetImgHeight) {
-        scaledHeight = m_targetImgHeight;
+    if (scaledHeight > targetHeight) {
+        scaledHeight = targetHeight;
         scaledWidth = (rawWidth * scaledHeight + (rawHeight / 2)) / rawHeight;
     }
     #ifndef NDEBUG

@@ -2,6 +2,7 @@
 
 #include "imgui.h"
 
+#define NOMINMAX  // pfd includes <windows.h>, which trashes std::min and std::max
 #define PFD_SKIP_IMPLEMENTATION 1
 #include "portable-file-dialogs.h"
 
@@ -246,9 +247,9 @@ void GIPS::App::drawUI() {
             ImGui::InputInt("##th", &m_editTargetHeight, 0);
             ImGui::PopItemWidth();
             ImGui::SameLine();
-            if (ImGui::Button("Set")) {
-                m_targetImgWidth = m_editTargetWidth;
-                m_targetImgHeight = m_editTargetHeight;
+            if (ImGui::Button("Apply")) {
+                m_targetImgWidth  = m_editTargetWidth  = std::min(m_editTargetWidth,  m_imgMaxSize);
+                m_targetImgHeight = m_editTargetHeight = std::min(m_editTargetHeight, m_imgMaxSize);
                 requestUpdateSource();
             }
             if ((m_imgSource == ImageSource::Image) && !m_imgResize) {

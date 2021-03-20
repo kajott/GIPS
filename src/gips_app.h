@@ -52,6 +52,7 @@ private:
     int m_editTargetHeight = 640;
     int m_imgWidth = 0;
     int m_imgHeight = 0;
+    int m_imgMaxSize = 1024;
 
     // rendering resources
     GLutil::Shader m_vertexShader;
