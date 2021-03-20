@@ -77,6 +77,16 @@ private:
     void panUpdate(int x, int y);
     void zoomAt(int x, int y, int step);
 
+    // status message
+    enum class StatusType {
+        Neutral,
+        Success,
+        Error,
+    };
+    std::string m_statusText;
+    StatusType m_statusType = StatusType::Neutral;
+    bool m_statusVisible = false;
+
     // "pipeline change requests", basically APCs for modifying the popeline
     struct PipelineChangeRequest {
         enum class Type {
@@ -141,6 +151,20 @@ public:
         { m_pcr.type = PipelineChangeRequest::Type::LoadImage; m_pcr.path = filename; }
     inline void requestSaveResult(const char* filename)
         { m_pcr.type = PipelineChangeRequest::Type::SaveResult; m_pcr.path = filename; }
+
+    inline void setStatus(StatusType type, const char* msg)
+        { m_statusType = type; 
+          if (msg && msg[0]) { m_statusText = msg; m_statusVisible = true; }
+          else { m_statusText.clear(); m_statusVisible = false; } }
+
+    inline bool setError(const std::string& msg)
+        { setStatus(StatusType::Error, msg.c_str()); return false; }
+    inline bool setError(const char* msg)
+        { setStatus(StatusType::Error, msg); return false; }
+    inline bool setSuccess(const std::string& msg)
+        { setStatus(StatusType::Success, msg.c_str()); return true; }
+    inline bool setSuccess(const char* msg=nullptr)
+        { setStatus(StatusType::Success, msg); return true; }
 
     static bool isShaderFile(uint32_t extCode);
     static inline bool isShaderFile(const char* filename)

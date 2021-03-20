@@ -15,26 +15,37 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 struct StatusWindow {
-    StatusWindow(const char* name, float ax, float ay) {
+    bool shallShow;
+    int nPopColor;
+    StatusWindow(const char* name, float ax, float ay, bool *p_open=nullptr, uint32_t color=0) {
         const ImGuiViewport* vp = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(ImVec2(
             vp->WorkPos.x + ax * vp->WorkSize.x,
             vp->WorkPos.y + ay * vp->WorkSize.y
         ), ImGuiCond_Always, ImVec2(ax, ay));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4.0f, 3.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(20.0f, 20.0f));
+        nPopColor = 0;
+        if (color) {
+            ImGui::PushStyleColor(ImGuiCol_TitleBg, color);  ++nPopColor;
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, color);  ++nPopColor;
+        }
         ImGui::SetNextWindowBgAlpha(0.375f);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 1.0f));
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(16.0f, 16.0f));
-        ImGui::Begin(name, nullptr,
-                     ImGuiWindowFlags_NoDecoration |
-                     ImGuiWindowFlags_AlwaysAutoResize |
-                     ImGuiWindowFlags_NoSavedSettings |
-                     ImGuiWindowFlags_NoFocusOnAppearing |
-                     ImGuiWindowFlags_NoNav |
-                     ImGuiWindowFlags_NoMove);
+        shallShow = ImGui::Begin(name, p_open,
+                    (p_open ? 0 : ImGuiWindowFlags_NoTitleBar) |
+                    ImGuiWindowFlags_AlwaysAutoResize |
+                    ImGuiWindowFlags_NoSavedSettings |
+                    ImGuiWindowFlags_NoFocusOnAppearing |
+                    ImGuiWindowFlags_NoScrollbar |
+                    ImGuiWindowFlags_NoNav |
+                    ImGuiWindowFlags_NoMove |
+                    ImGuiWindowFlags_NoResize | 
+                    ImGuiWindowFlags_NoCollapse);
     }
     ~StatusWindow() {
         ImGui::End();
         ImGui::PopStyleVar(2);
+        if (nPopColor) { ImGui::PopStyleColor(nPopColor); }
     }
 };
 
@@ -88,7 +99,7 @@ static bool TreeNodeForGIPSNode(GIPS::App& app, int nodeIndex=0, GIPS::Node* nod
             app.requestMoveNode(nodeIndex, nodeIndex + 1);
         }
         if (ImGui::BeginMenu("filename")) {
-            ImGui::Text("%s", node->filename());
+            ImGui::TextUnformatted(node->filename());
             ImGui::EndMenu();
         }
         if (ImGui::Selectable("reload")) {
@@ -141,6 +152,22 @@ void GIPS::App::drawUI() {
             ImGui::Text("1/%.0fx", 1.0f / m_imgZoom);
         }
     }
+
+    // status message
+    if (m_statusVisible) {
+        StatusWindow _(
+            (m_statusType == StatusType::Error)   ?   "Error##statusMsg" :
+            (m_statusType == StatusType::Success) ? "Success##statusMsg" :
+                                                    "Message##statusMsg",
+            0.5f, 1.0f, &m_statusVisible,
+            (m_statusType == StatusType::Error)   ? 0xC00000FF :
+            (m_statusType == StatusType::Success) ? 0x00A000FF :
+                                                    0);
+        if (_.shallShow) {
+            ImGui::TextUnformatted(m_statusText.c_str());
+        }
+    }
+
 
     // main window begin
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->WorkPos, ImGuiCond_Once, ImVec2(0.0f, 0.0f));

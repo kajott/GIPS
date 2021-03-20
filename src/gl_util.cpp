@@ -47,11 +47,12 @@ const char* errorString(GLuint code) {
     }
 }
 
-bool checkError(const char* prefix) {
-    bool err = false;
+GLenum checkError(const char* prefix) {
+    GLenum firstError = 0;
     for (;;) {
         GLuint code = glGetError();
         if (!code) { break; }
+        if (!firstError) { firstError = code; }
         #ifndef NDEBUG
         if (prefix) {
             fprintf(stderr, "%s: OpenGL Error: [0x%04X] %s\n", prefix, code, errorString(code));
@@ -60,7 +61,7 @@ bool checkError(const char* prefix) {
         }
         #endif
     }
-    return err;
+    return firstError;
 }
 
 static void GLAPIENTRY debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam) {

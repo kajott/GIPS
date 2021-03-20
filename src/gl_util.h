@@ -16,7 +16,7 @@ inline void clearError() {
 const char* errorString(GLuint code);
 inline const char* errorString() { return errorString(glGetError()); }
 
-bool checkError(const char* prefix=nullptr);
+GLenum checkError(const char* prefix=nullptr);
 
 void enableDebugMessages();
 

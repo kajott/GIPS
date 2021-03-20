@@ -482,9 +482,7 @@ void App::handleInputFile(const char* filename) {
     } else if (isImageFile(extCode)) {
             loadImage(filename);
     } else {
-        #ifndef DEBUG
-            fprintf(stderr, "unknown file type: %s\n", filename);
-        #endif
+        setError("can't open file: unrecognized file type");
     }
 }
 
@@ -494,7 +492,7 @@ bool App::uploadImageTexture(uint8_t* data, int width, int height, ImageSource s
     GLutil::clearError();
     glBindTexture(GL_TEXTURE_2D, m_imgTex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    bool error = GLutil::checkError("texture upload");
+    GLenum error = GLutil::checkError("texture upload");
     glBindTexture(GL_TEXTURE_2D, 0);
     glFlush();
     glFinish();
@@ -502,7 +500,14 @@ bool App::uploadImageTexture(uint8_t* data, int width, int height, ImageSource s
     m_imgWidth = width;
     m_imgHeight = height;
     m_imgSource = src;
-    return !error;
+    switch (error) {
+        case GL_INVALID_ENUM:  return setError("unsupported texture format");
+        case GL_INVALID_VALUE: return setError("unsupported texture size");
+        case GL_OUT_OF_MEMORY: return setError("insufficient video memory");
+        default: break;
+    }
+    if (!error) { return setSuccess(); }
+    return false;
 }
 
 bool App::loadColor() {
@@ -511,11 +516,11 @@ bool App::loadColor() {
             return false;
         }
     }
-    if (!m_helperFBO.begin(m_imgTex)) { return false; }
+    if (!m_helperFBO.begin(m_imgTex)) { return setError("failed to render solid color image"); }
     glClearColor(m_imgColor[0], m_imgColor[1], m_imgColor[2], m_imgColor[3]);
     glClear(GL_COLOR_BUFFER_BIT);
     m_helperFBO.end();
-    return true;
+    return setSuccess();
 }
 
 bool App::loadImage(const char* filename) {
@@ -525,7 +530,7 @@ bool App::loadImage(const char* filename) {
     m_imgFilename = filename;
     int rawWidth = 0, rawHeight = 0;
     uint8_t* rawData = stbi_load(filename, &rawWidth, &rawHeight, nullptr, 4);
-    if (!rawData) { return false; }
+    if (!rawData) { return setError("could not read image file"); }
     if (!m_imgResize || ((rawWidth <= m_targetImgWidth) && (rawHeight <= m_targetImgHeight))) {
         return uploadImageTexture(rawData, rawWidth, rawHeight, ImageSource::Image);
     }
@@ -539,11 +544,11 @@ bool App::loadImage(const char* filename) {
         fprintf(stderr, "downscaling %dx%d -> %dx%d\n", rawWidth, rawHeight, scaledWidth, scaledHeight);
     #endif
     uint8_t* scaledData = (uint8_t*) malloc(scaledWidth * scaledHeight * 4);
-    if (!scaledData) { ::free(rawData); return false; }
+    if (!scaledData) { ::free(rawData); return setError("out of memory"); }
     if (!stbir_resize_uint8(
            rawData,    rawWidth,    rawHeight, 0,
         scaledData, scaledWidth, scaledHeight, 0,
-        4)) { ::free(rawData); return false; }
+        4)) { ::free(rawData); return setError("could not downscale image"); }
     ::free(rawData);
     return uploadImageTexture(scaledData, scaledWidth, scaledHeight, ImageSource::Image);
 }
@@ -553,7 +558,7 @@ bool App::loadPattern() {
         #ifndef NDEBUG
             fprintf(stderr, "requested invalid pattern ID %d\n", m_imgPatternID);
         #endif
-        return false;
+        return setError("invalid pattern");
     }
     const PatternDefinition& pat = Patterns[m_imgPatternID];
     #ifndef NDEBUG
@@ -562,7 +567,7 @@ bool App::loadPattern() {
                 pat.name, m_imgPatternNoAlpha ? "without" : "with");
     #endif
     uint8_t* data = (uint8_t*)malloc(m_targetImgWidth * m_targetImgHeight * 4);
-    if (!data) { return false; }
+    if (!data) { return setError("out of memory"); }
     pat.render(data, m_targetImgWidth, m_targetImgHeight, !m_imgPatternNoAlpha);
     if (m_imgPatternNoAlpha && !pat.alwaysWritesAlpha) {
         uint8_t *p = &data[3];
@@ -579,7 +584,7 @@ bool App::updateImage() {
         case ImageSource::Color:   return loadColor();
         case ImageSource::Image:   return loadImage(m_imgFilename.c_str());
         case ImageSource::Pattern: return loadPattern();
-        default: return false;
+        default: return setError("unkown image source type");
     }
 }
 
@@ -600,9 +605,9 @@ bool App::saveResult(const char* filename) {
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_imgWidth, m_imgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    if (GLutil::checkError("saving texture creation")) { return false; }
+    if (GLutil::checkError("saving texture creation")) { return setError("failed to create temporary texture for saving"); }
     uint8_t *data = (uint8_t*) malloc(m_imgWidth * m_imgHeight * 4);
-    if (!data) { return false; }
+    if (!data) { return setError("out of memory"); }
 
     // copy result into staging texture
     m_imgProgram.use();
@@ -613,18 +618,18 @@ bool App::saveResult(const char* filename) {
     float scaleY = -2.0f / m_io->DisplaySize.y;
     glUniform4f(m_imgProgramAreaLoc, -1.0f, -1.0f, 2.0f, 2.0f);
     glViewport(0, 0, m_imgWidth, m_imgHeight);
-    if (GLutil::checkError("saving render preparation")) { ::free(data); return false; }
+    if (GLutil::checkError("saving render preparation")) { ::free(data); return setError("image retrieval failed"); }
     m_helperFBO.begin(tex);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     m_helperFBO.end();
-    if (GLutil::checkError("saving render draw operation")) { ::free(data); return false; }
+    if (GLutil::checkError("saving render draw operation")) { ::free(data); return setError("image retrieval failed"); }
 
     // read and delete staging texture
     glBindTexture(GL_TEXTURE_2D, tex);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     glBindTexture(GL_TEXTURE_2D, 0);
     glDeleteTextures(1, &tex);
-    if (GLutil::checkError("saving texture readback")) { ::free(data); return false; }
+    if (GLutil::checkError("saving texture readback")) { ::free(data); return setError("image retrieval failed"); }
 
     // save the image
     int res;
@@ -644,10 +649,11 @@ bool App::saveResult(const char* filename) {
             res = stbi_write_bmp(filename, m_imgWidth, m_imgHeight, 4, data);
             break;
         default:
-            ::free(data); return false;
+            ::free(data); return setError("unrecognized output file format");
     }
     ::free(data);
-    return true;
+    if (res == 0) { return setError("image saving failed"); }
+    return setSuccess();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
