@@ -220,6 +220,8 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
                 else if (isKey("unit") && needParam() && needValue()) { param->m_format = value; }
                 else if ((isKey("toggle") || isKey("switch")) && needParam()) {
                     setParamType(GLSLToken::Float, ParameterType::Toggle);
+                } else if ((isKey("angle")) && needParam()) {
+                    setParamType(GLSLToken::Float, ParameterType::Angle);
                 } else if (isKey("color")  && needParam()) {
                     setParamType(GLSLToken::Vec3, ParameterType::RGB, false) ||
                     setParamType(GLSLToken::Vec4, ParameterType::RGBA);

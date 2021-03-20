@@ -276,6 +276,11 @@ void GIPS::App::drawUI() {
                                 param.value()[0] = checked ? param.maxValue() : param.minValue();
                             }
                             break; }
+                        case ParameterType::Angle:
+                            ImGui::SliderAngle(param.desc(), param.value(),
+                                (std::abs(param.minValue()) < 5.0f) ? (param.minValue() * 360.0f) : param.minValue(),
+                                (std::abs(param.maxValue()) < 5.0f) ? (param.maxValue() * 360.0f) : param.maxValue());
+                            break;
                         case ParameterType::Value:
                             ImGui::SliderFloat(param.desc(), param.value(), param.minValue(), param.maxValue(), param.format());
                             break;

@@ -68,6 +68,12 @@ but the following **tokens** are recognized, interpreted and removed before:
   Turns the parameter UI of a `vec3` or `vec4` parameter
   into an RGB or RGBA color picker.
   Forbidden on other parameter types.
+- `@angle`\
+  Makes the parameter UI of a `float` parameter translate
+  between degrees (that the user inputs)
+  and radians (the actual value stored in the variable).\
+  The `@min` and `@max` values are also specified in degrees;
+  the default value, however, is still set in radians.
 - `@switch` or `@toggle`\
   Turns the parameter UI of a `float` parameter into a checkbox
   that toggles the value of the parameter between 0.0 and 1.0.

@@ -25,7 +25,7 @@
 - [ ] re-arrange filters with "move to >>" menu
 - [X] don't accept global tokens in parameter comments
 - [ ] allow non-lowercase unit names
-- [ ] angle parameter type
+- [X] angle parameter type
 - [ ] logo pattern
 - [ ] static SDL2 on Win32
 - [ ] use other, more battle-tested image loaders for PNG and JPEG

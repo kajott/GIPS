@@ -17,6 +17,7 @@ enum class ParameterType {
     Value3,
     Value4,
     Toggle,
+    Angle,
     RGB,
     RGBA,
 };

@@ -223,6 +223,7 @@ void Pipeline::render(GLuint srcTex, int width, int height, int maxNodes) {
                 switch (param.m_type) {
                     case ParameterType::Value:
                     case ParameterType::Toggle:
+                    case ParameterType::Angle:
                         glUniform1f(loc, param.m_value[0]);
                         break;
                     case ParameterType::Value2:
