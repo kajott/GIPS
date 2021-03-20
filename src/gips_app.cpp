@@ -300,12 +300,12 @@ bool App::handleEvents(bool wait) {
                 }
                 break;
             case SDL_MOUSEBUTTONDOWN:
-                if (!m_io->WantCaptureMouse && (ev.button.button == SDL_BUTTON_LEFT)) {
+                if (!m_io->WantCaptureMouse && ((ev.button.button == SDL_BUTTON_LEFT) || (ev.button.button == SDL_BUTTON_MIDDLE))) {
                     panStart(ev.button.x, ev.button.y);
                 }
                 break;
             case SDL_MOUSEMOTION:
-                if (m_panning && (ev.motion.state & SDL_BUTTON_LMASK)) {
+                if (m_panning && (ev.motion.state & (SDL_BUTTON_LMASK | SDL_BUTTON_MMASK))) {
                     panUpdate(ev.motion.x, ev.motion.y);
                 }
                 break;
