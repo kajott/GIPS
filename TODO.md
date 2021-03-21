@@ -12,7 +12,7 @@
 - [ ] don't reload shaders on F5 if not changed
 - [ ] poll for filter changes
 - [ ] clean uninitialization
-- [ ] perf stats
+- [X] perf stats
 - [ ] reset parameters to defaults
 - [X] dynamic scaling of the editing precision
 - [ ] don't create staging texture if format is already GL_RGBA8
@@ -30,6 +30,7 @@
 - [ ] static SDL2 on Win32
 - [ ] use other, more battle-tested image loaders for PNG and JPEG
 - [ ] add hyperlink to project page in info window
+- [ ] import/export image from/to system clipboard
 
 And finally:
 - [ ] version 2 with arbitrary node graphs

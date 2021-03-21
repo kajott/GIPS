@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include "gl_header.h"
 #include "gl_util.h"
@@ -166,6 +167,7 @@ void Pipeline::render(GLuint srcTex, int width, int height, int maxNodes) {
     // set viewport
     glViewport(0, 0, width, height);
     GLutil::checkError("processing viewport setup");
+    auto t0 = std::chrono::high_resolution_clock::now();
 
     // iterate over the nodes and passes
     m_resultTex = srcTex;
@@ -258,6 +260,14 @@ void Pipeline::render(GLuint srcTex, int width, int height, int maxNodes) {
 
         }   // END pass loop
     }   // END node loop
+
+    // force full pipeline flush to measure timing
+    glBindTexture(GL_TEXTURE_2D, m_resultTex);
+    glFlush();
+    glFinish();
+    glBindTexture(GL_TEXTURE_2D, 0);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    m_lastRenderTime_ms = std::chrono::duration<float, std::milli>(t1 - t0).count();
 }   // END render()
 
 ///////////////////////////////////////////////////////////////////////////////

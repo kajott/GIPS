@@ -377,6 +377,11 @@ void GIPS::App::drawUI() {
                      ImGuiWindowFlags_NoResize);
         ImGui::TextUnformatted("GIPS - The GLSL Imaging Processing System");
         ImGui::TextUnformatted("(C) 2021 Martin J. Fiedler");
+        ImGui::Separator();
+        ImGui::Text("estimated video memory usage: %.1f MiB",
+            // 8-bit RGBA, 4 buffers (input + 2x processing + export)
+            (m_imgWidth * m_imgHeight * 4 * 4) / 1048576.0f);
+        ImGui::Text("processing time: %.1f ms", m_pipeline.lastRenderTime_ms());
         ImGui::End();
     }   // END info window
 }

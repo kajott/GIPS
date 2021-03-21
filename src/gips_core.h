@@ -115,12 +115,14 @@ class Pipeline {
     GLuint m_resultTex = 0;
     bool m_initialized = false;
     bool m_initOK = false;
+    float m_lastRenderTime_ms = 0.0f;
 
 public:
     bool init();
     inline const GLutil::Shader& vs() const { return m_vs; }
     inline const bool   good()        const { return m_initOK; }
     inline const GLuint resultTex()   const { return m_resultTex; }
+    inline float lastRenderTime_ms()  const { return m_lastRenderTime_ms; }
     inline const int    nodeCount()   const { return int(m_nodes.size()); }
     inline const Node&  node(int i)   const { return *m_nodes[i]; }
     inline       Node&  node(int i)         { return *m_nodes[i]; }
