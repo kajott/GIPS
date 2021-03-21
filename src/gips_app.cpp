@@ -514,7 +514,10 @@ bool App::uploadImageTexture(uint8_t* data, int width, int height, ImageSource s
         case GL_OUT_OF_MEMORY: return setError("insufficient video memory");
         default: break;
     }
-    if (!error) { return setSuccess(); }
+    if (!error) {
+        m_pipeline.markAsChanged();
+        return setSuccess();
+    }
     return false;
 }
 
