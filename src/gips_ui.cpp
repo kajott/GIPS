@@ -170,7 +170,8 @@ void GIPS::App::drawUI() {
     }
 
     // main window begin
-    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->WorkPos, ImGuiCond_Once, ImVec2(0.0f, 0.0f));
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->WorkPos, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(320.0f, 360.0f), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Filters")) {
         int oldShowIndex = m_showIndex;
 
