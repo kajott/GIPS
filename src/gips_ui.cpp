@@ -381,7 +381,9 @@ void GIPS::App::drawUI() {
         ImGui::Separator();
         ImGui::Text("estimated video memory usage: %.1f MiB",
             // 8-bit RGBA, 4 buffers (input + 2x processing + export)
-            (m_imgWidth * m_imgHeight * 4 * 4) / 1048576.0f);
+            // + 2 buffers for the display screen
+            (m_imgWidth * m_imgHeight * 4 * 4 +
+             m_io->DisplaySize.x * m_io->DisplaySize.y * 4 * 2) / 1048576.0f);
         ImGui::Text("processing time: %.1f ms", m_pipeline.lastRenderTime_ms());
         ImGui::End();
     }   // END info window
