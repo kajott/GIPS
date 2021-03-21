@@ -72,8 +72,8 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
     size_t fsize = 0;
     char *code = nullptr;
     std::vector<Parameter> newParams;
-    std::stringstream shader;
-    std::stringstream err;
+    std::ostringstream shader;
+    std::ostringstream err;
     StringUtil::Tokenizer tok;
     GLutil::Shader fs;
     GLutil::Program* prog = nullptr;
@@ -389,6 +389,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
         }
 
         // fragment shader assembly: boilerplate
+        shader.str("");
         shader.clear();
         shader << "#version 330 core\n"
                   "#line 8000 0\n"
@@ -436,16 +437,15 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
         }
         shader << ";\n}\n";
 
-#if 0  // DEBUG
-puts("------------------------------------");
-puts(shader.str().c_str());
-puts("------------------------------------");
-#endif
-
         // compile shader and link program
         fs.compile(GL_FRAGMENT_SHADER, shader.str().c_str());
         if (fs.haveLog()) { err << fs.getLog() << "\n"; }
-        if (!fs.good()) { goto load_finalize; }
+        if (!fs.good()) {
+            #ifndef NDEBUG
+                fprintf(stderr, "----- failed shader source code -----\n%s\n----- end of failed shader code -----\n", shader.str().c_str());
+            #endif
+            goto load_finalize;
+        }
         prog = &pass.program;
         prog->link(vs, fs);
         if (prog->haveLog()) { err << prog->getLog() << "\n"; }

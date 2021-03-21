@@ -31,6 +31,7 @@
 - [ ] use other, more battle-tested image loaders for PNG and JPEG
 - [ ] add hyperlink to project page in info window
 - [ ] import/export image from/to system clipboard
+- [ ] explicit precision specifier
 
 And finally:
 - [ ] version 2 with arbitrary node graphs
