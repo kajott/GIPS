@@ -64,6 +64,15 @@ The text of this comment is used for the parameter name,
 but the following **tokens** are recognized, interpreted and removed before:
 - `@min=<value>` and `@max=<value>`\
   Set the range for the sliders in the UI.
+- `@digits=<number>`\
+  Set the number of decimal digits of precision for the value's slider in the UI.
+  By default, this is auto-detected from the value range,
+  but in some cases, it might be desirable to set this manually.
+- `@int`\
+  Equivalent to `@digits=0`. Note that, despite the name,
+  this doesn't turn the parameter into an `int` or `ivec` (it's still a `float`
+  or floating-point `vec`), nor does it prevent the user from
+  manually entering a value with more digits.
 - `@color`\
   Turns the parameter UI of a `vec3` or `vec4` parameter
   into an RGB or RGBA color picker.

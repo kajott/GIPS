@@ -217,6 +217,8 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
                 // evaluate the tokens
                      if ((isKey("min") || isKey("off")) && needParam() && needNum()) { param->m_minValue = fval; }
                 else if ((isKey("max") || isKey("on"))  && needParam() && needNum()) { param->m_maxValue = fval; }
+                else if (isKey("digits") && needParam() && needNum()) { param->m_digits = int(fval + 0.5f); }
+                else if (isKey("int") && needParam()) { param->m_digits = 0; }
                 else if (isKey("unit") && needParam() && needValue()) { param->m_format = value; }
                 else if ((isKey("toggle") || isKey("switch")) && needParam()) {
                     setParamType(GLSLToken::Float, ParameterType::Toggle);
@@ -352,10 +354,14 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
 
     // finalize parameters
     for (auto& p : newParams) {
-        // auto-scale format
-        float absMax = std::max(std::abs(p.m_minValue), std::abs(p.m_maxValue));
-        int vscale = std::max(0, 2 - int(std::floor(std::log10(std::max(absMax, 1e-6f)))));
-        std::string fmt = std::string("%.") + std::to_string(vscale) + std::string("f");
+        // auto-detect number of digits if not set explicitly
+        if (p.m_digits < 0) {
+            float absMax = std::max(std::abs(p.m_minValue), std::abs(p.m_maxValue));
+            p.m_digits = std::max(0, 2 - int(std::floor(std::log10(std::max(absMax, 1e-6f)))));
+        }
+
+        // set format string
+        std::string fmt = std::string("%.") + std::to_string(p.m_digits) + std::string("f");
         if (p.m_format.empty()) {
             p.m_format = fmt;
         } else {

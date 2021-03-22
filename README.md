@@ -50,6 +50,8 @@ Here are some specific hints for the non-obvious things:
 - The "show" button in the filter header bar is used
   to set the point in the pipeline from which the output
   that is shown on-screen (and saved to the file) is taken from.
+- Ctrl+click a parameter slider to enter a value with the keyboard.
+  This way, it's also possible to input values outside of the slider's range.
 - Press F5 to reload the shaders.
 - Press Ctrl+F5 to reload the shaders and the input image.
 

@@ -37,6 +37,7 @@ class Parameter {
     std::string m_desc;
     std::string m_format;
     ParameterType m_type = ParameterType::Value;
+    int m_digits = -1;
     float m_minValue     = 0.0f;
     float m_maxValue     = 1.0f;
     float m_value[4]     = { 0.0f, };

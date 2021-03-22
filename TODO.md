@@ -31,7 +31,8 @@
 - [ ] use other, more battle-tested image loaders for PNG and JPEG
 - [ ] add hyperlink to project page in info window
 - [ ] import/export image from/to system clipboard
-- [ ] explicit precision specifier
+- [X] explicit precision specifier
+- [ ] zoneplate-style pattern
 
 And finally:
 - [ ] version 2 with arbitrary node graphs
