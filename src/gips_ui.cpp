@@ -103,6 +103,9 @@ static bool TreeNodeForGIPSNode(GIPS::App& app, int nodeIndex=0, GIPS::Node* nod
             ImGui::TextUnformatted(node->filename());
             ImGui::EndMenu();
         }
+        if (ImGui::Selectable("restore defaults")) {
+            node->reset();
+        }
         if (ImGui::Selectable("reload")) {
             app.requestReloadNode(nodeIndex);
         }
@@ -268,6 +271,8 @@ void GIPS::App::drawUI() {
                 // parameters
                 for (int paramIndex = 0 ;  paramIndex < node.paramCount();  ++paramIndex) {
                     auto& param = node.param(paramIndex);
+                    bool ctlOK = true;
+                    ImGui::PushID(paramIndex);
                     switch (param.type()) {
                         case ParameterType::Toggle: {
                             bool checked = std::abs(param.value()[0] - param.maxValue())
@@ -303,9 +308,18 @@ void GIPS::App::drawUI() {
                             ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
                             ImGui::Text("parameter '%s' has unsupported type", param.name());
                             ImGui::PopStyleColor(1);
+                            ctlOK = false;
                             break;
                     }
-                }
+                    // reset menu
+                    if (ctlOK && ImGui::BeginPopupContextItem("parameter popup")) {
+                        if (ImGui::Selectable("restore default")) {
+                            param.reset();
+                        }
+                        ImGui::EndPopup();
+                    }
+                    ImGui::PopID();
+                }   // END parameter iteration
 
                 // error messages (if present)
                 if (node.errors()[0]) {

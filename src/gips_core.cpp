@@ -49,6 +49,18 @@ bool Pipeline::changed() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+void Parameter::reset() {
+    for (int i = 0;  i < 4;  ++i) {
+        m_value[i] = m_defaultValue[i];
+    }
+}
+
+void Node::reset() {
+    for (size_t i = 0;  i < m_params.size();  ++i) {
+        m_params[i].reset();
+    }
+}
+
 void Pipeline::reload() {
     m_pipelineChanged = true;
     for (size_t i = 0;  i < m_nodes.size();  ++i) {

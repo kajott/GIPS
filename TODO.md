@@ -13,7 +13,7 @@
 - [ ] poll for filter changes
 - [ ] clean uninitialization
 - [X] perf stats
-- [ ] reset parameters to defaults
+- [X] reset parameters to defaults
 - [X] dynamic scaling of the editing precision
 - [ ] don't create staging texture if format is already GL_RGBA8
 - [X] error reporting in the UI
@@ -33,6 +33,7 @@
 - [ ] import/export image from/to system clipboard
 - [X] explicit precision specifier
 - [ ] zoneplate-style pattern
+- [ ] load/save pipelines and parameters
 
 And finally:
 - [ ] version 2 with arbitrary node graphs

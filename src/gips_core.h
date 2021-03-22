@@ -36,16 +36,18 @@ class Parameter {
     std::string m_name;
     std::string m_desc;
     std::string m_format;
-    ParameterType m_type = ParameterType::Value;
-    int m_digits = -1;
-    float m_minValue     = 0.0f;
-    float m_maxValue     = 1.0f;
-    float m_value[4]     = { 0.0f, };
-    float m_oldValue[4]  = { 0.0f, };
+    ParameterType m_type        = ParameterType::Value;
+    int m_digits                = -1;
+    float m_minValue            = 0.0f;
+    float m_maxValue            = 1.0f;
+    float m_value[4]            = { 0.0f, };
+    float m_oldValue[4]         = { 0.0f, };
+    float m_defaultValue[4]     = { 0.0f, };
     GLint m_location[MaxPasses] = { 0, };
 public:
     inline Parameter() {}
     bool changed();
+    void reset();
     inline const char*         name()     const { return m_name.c_str(); }
     inline const char*         desc()     const { return m_desc.empty() ? m_name.c_str() : m_desc.c_str(); }
     inline const char*         format()   const { return m_format.empty() ? "%.2f" : m_format.c_str(); }
@@ -82,6 +84,7 @@ public:
     inline bool reload(const GLutil::Shader& vs) { return load(m_filename.c_str(), vs); }
 
     bool changed();
+    void reset();
 
     inline const char*      name()       const { return m_name.c_str(); }
     inline const char*      filename()   const { return m_filename.c_str(); }

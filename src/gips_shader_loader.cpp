@@ -307,7 +307,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
             char* end = nullptr;
             float f = strtof(tok.token(), &end);
             if (end && !*end) {
-                param->m_value[paramValueIndex++] = f;
+                param->m_defaultValue[paramValueIndex++] = f;
             }
         }
 
@@ -368,12 +368,11 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
             p.m_format = fmt + std::string(" ") + p.m_format;
         }
 
-        // copy old parameter values
+        // initialize parameter values
         Parameter* oldParam = findParam(p.name());
-        if (oldParam) {
-            for (int i = 0;  i < 4;  ++i) {
-                p.m_value[i] = oldParam->m_value[i];
-            }
+        const float *valueSrc = oldParam ? oldParam->m_value : p.m_defaultValue;
+        for (int i = 0;  i < 4;  ++i) {
+            p.m_value[i] = valueSrc[i];
         }
     }
 
