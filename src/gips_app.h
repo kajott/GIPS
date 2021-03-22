@@ -137,7 +137,8 @@ public:
 
     inline const char* getShaderDir() const { return m_shaderDir.c_str(); }
 
-    inline int getNodeCount() const { return m_pipeline.nodeCount(); }
+    inline int getNodeCount() const { return m_pipeline.nodeCount() + 1; }
+    inline Node* getNode(int idx) { return ((idx > 0) && (idx <= m_pipeline.nodeCount())) ? &m_pipeline.node(idx - 1) : nullptr; }
 
     inline void requestInsertNode(const char* filename, int nodeIndex=0)
         { m_pcr.type = PipelineChangeRequest::Type::InsertNode; m_pcr.nodeIndex = nodeIndex; m_pcr.path = filename; }

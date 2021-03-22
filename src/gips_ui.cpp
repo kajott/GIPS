@@ -93,12 +93,41 @@ static bool TreeNodeForGIPSNode(GIPS::App& app, int nodeIndex=0, GIPS::Node* nod
             ShaderBrowserMenu(app, nodeIndex, app.getShaderDir());
             ImGui::EndMenu();
         }
-        if ((nodeIndex > 1) && ImGui::Selectable("move up")) {
+
+        // move menus
+        bool mayMoveUp = (nodeIndex > 1);
+        bool mayMoveDown = (nodeIndex < (app.getNodeCount() - 1));
+        bool mayMoveTo = (app.getNodeCount() > 2);
+        if (mayMoveUp || mayMoveDown || mayMoveTo) {
+            ImGui::Separator();
+        }
+        if (mayMoveUp && ImGui::Selectable("move up")) {
             app.requestMoveNode(nodeIndex, nodeIndex - 1);
         }
-        if ((nodeIndex < app.getNodeCount()) && ImGui::Selectable("move down")) {
+        if (mayMoveDown && ImGui::Selectable("move down")) {
             app.requestMoveNode(nodeIndex, nodeIndex + 1);
         }
+        if (mayMoveTo && ImGui::BeginMenu("move to")) {
+            for (int subIndex = 0;  subIndex < app.getNodeCount();  ++subIndex) {
+                ImGui::PushID(subIndex);
+                if (subIndex == nodeIndex) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
+                }
+                ImGui::TextUnformatted(subIndex ? app.getNode(subIndex)->name() : "Input Image");
+                if (subIndex == nodeIndex) {
+                    ImGui::PopStyleColor(1);
+                }
+                if ((subIndex != nodeIndex) && (subIndex != (nodeIndex - 1))) {
+                    if (ImGui::Selectable("##move")) {
+                        app.requestMoveNode(nodeIndex, (subIndex < nodeIndex) ? (subIndex + 1) : subIndex);
+                    }
+                }
+                ImGui::PopID();
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::Separator();
+
         if (ImGui::BeginMenu("filename")) {
             ImGui::TextUnformatted(node->filename());
             ImGui::EndMenu();
@@ -113,7 +142,7 @@ static bool TreeNodeForGIPSNode(GIPS::App& app, int nodeIndex=0, GIPS::Node* nod
             app.requestRemoveNode(nodeIndex);
         }
         ImGui::EndPopup();
-    }
+    }   // END node header context menu
 
     // add node toggle and show index buttons
     if (node) {

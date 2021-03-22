@@ -22,7 +22,7 @@
 - [ ] code documentation
 - [ ] simple build scripts
 - [X] middle-click + drag to move the image
-- [ ] re-arrange filters with "move to >>" menu
+- [X] re-arrange filters with "move to >>" menu
 - [X] don't accept global tokens in parameter comments
 - [ ] allow non-lowercase unit names
 - [X] angle parameter type
