@@ -200,7 +200,7 @@ int App::run(int argc, char *argv[]) {
         drawUI();
         #ifndef NDEBUG
             if (m_showDemo) {
-                ImGui::ShowDemoWindow();
+                ImGui::ShowDemoWindow(&m_showDemo);
             }
         #endif
         ImGui::Render();
@@ -289,25 +289,26 @@ bool App::handleEvents(bool wait) {
             case SDL_QUIT:
                 m_active = false;
                 break;
-            case SDL_KEYUP:
+            case SDL_KEYUP: {
+                bool ctrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
                 switch (ev.key.keysym.sym) {
+                    case SDLK_o:
+                        if (ctrl) { showLoadUI(); }
+                        break;
+                    case SDLK_s:
+                        if (ctrl) { showSaveUI(); }
+                        break;
                     case SDLK_q:
-                        if (SDL_GetModState() & KMOD_CTRL) {
-                            m_active = false;
-                        }
+                        if (ctrl) { m_active = false; }
                         break;
                     case SDLK_F5: {
-                        bool force = ((SDL_GetModState() & KMOD_CTRL) != 0);
-                        if (force) { updateImage(); }
-                        m_pipeline.reload(force);
+                        if (ctrl) { updateImage(); }
+                        m_pipeline.reload(ctrl);
                         break; }
-                    case SDLK_F9:
-                        m_showDemo = !m_showDemo;
-                        break;
                     default:
                         break;
                 }
-                break;
+                break; }
             case SDL_MOUSEBUTTONDOWN:
                 if (!m_io->WantCaptureMouse && ((ev.button.button == SDL_BUTTON_LEFT) || (ev.button.button == SDL_BUTTON_MIDDLE))) {
                     panStart(ev.button.x, ev.button.y);
@@ -467,10 +468,8 @@ bool App::handlePCR() {
             }
             break;
 
-        case PipelineChangeRequest::Type::LoadImage:
-            if (loadImage(m_pcr.path.c_str())) {
-                m_pipeline.markAsChanged();
-            }
+        case PipelineChangeRequest::Type::HandleFile:
+            handleInputFile(m_pcr.path.c_str());
             break;
 
         case PipelineChangeRequest::Type::SaveResult:
@@ -497,7 +496,7 @@ void App::handleInputFile(const char* filename) {
             m_showIndex++;
         }
     } else if (isImageFile(extCode)) {
-            loadImage(filename);
+        loadImage(filename);
     } else {
         setError("can't open file: unrecognized file type");
     }

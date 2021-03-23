@@ -35,6 +35,7 @@ private:
     SDL_GLContext m_glctx = nullptr;
     ImGuiIO* m_io = nullptr;
     bool m_active = true;
+    bool m_showWidgets = true;
     bool m_showDemo = false;
     bool m_showInfo = false;
 
@@ -97,7 +98,7 @@ private:
             RemoveNode,
             MoveNode,
             UpdateSource,
-            LoadImage,
+            HandleFile,
             SaveResult,
         } type = Type::None;
         int nodeIndex = 0;    //!< node index (1-based) for all operations
@@ -107,8 +108,13 @@ private:
 
     bool handleEvents(bool wait);
     bool handlePCR();
-    void drawUI();
 
+    // UI functions (implemented in gips_ui.cpp)
+    void drawUI();
+    void showLoadUI(bool withShaders=true);
+    void showSaveUI();
+
+    // image source modification functions
     bool uploadImageTexture(uint8_t* data, int width, int height, ImageSource src);
     bool loadColor();
     bool loadImage(const char* filename);
@@ -149,8 +155,8 @@ public:
         { m_pcr.type = PipelineChangeRequest::Type::MoveNode; m_pcr.nodeIndex = fromIndex; m_pcr.targetIndex = toIndex; }
     inline void requestUpdateSource()
         { m_pcr.type = PipelineChangeRequest::Type::UpdateSource; }
-    inline void requestLoadImage(const char* filename)
-        { m_pcr.type = PipelineChangeRequest::Type::LoadImage; m_pcr.path = filename; }
+    inline void requestHandleFile(const char* filename)
+        { m_pcr.type = PipelineChangeRequest::Type::HandleFile; m_pcr.path = filename; }
     inline void requestSaveResult(const char* filename)
         { m_pcr.type = PipelineChangeRequest::Type::SaveResult; m_pcr.path = filename; }
 

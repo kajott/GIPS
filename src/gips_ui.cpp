@@ -161,28 +161,31 @@ static bool TreeNodeForGIPSNode(GIPS::App& app, int nodeIndex=0, GIPS::Node* nod
 ///////////////////////////////////////////////////////////////////////////////
 
 void GIPS::App::drawUI() {
-    // mouse position status
-    bool mouseValid = ImGui::IsMousePosValid();
-    float mpx = 0.0f, mpy = 0.0f;
-    if (mouseValid) {
-        mpx = (m_io->MousePos.x - float(m_imgX0)) / m_imgZoom;
-        mpy = (m_io->MousePos.y - float(m_imgY0)) / m_imgZoom;
-        if ((mpx < 0.0f) || (mpy < 0.0f) || (mpx >= float(m_imgWidth)) || (mpy >= float(m_imgHeight))) {
-            mouseValid = false;
+    // status windows ("widgets")
+    if (m_showWidgets) {
+        // mouse position status
+        bool mouseValid = ImGui::IsMousePosValid();
+        float mpx = 0.0f, mpy = 0.0f;
+        if (mouseValid) {
+            mpx = (m_io->MousePos.x - float(m_imgX0)) / m_imgZoom;
+            mpy = (m_io->MousePos.y - float(m_imgY0)) / m_imgZoom;
+            if ((mpx < 0.0f) || (mpy < 0.0f) || (mpx >= float(m_imgWidth)) || (mpy >= float(m_imgHeight))) {
+                mouseValid = false;
+            }
         }
-    }
-    if (mouseValid) {
-        StatusWindow _("Mouse Position", 0.0f, 1.0f);
-        ImGui::Text("%d,%d", int(mpx), int(mpy));
-    }
+        if (mouseValid) {
+            StatusWindow _("Mouse Position", 0.0f, 1.0f);
+            ImGui::Text("%d,%d", int(mpx), int(mpy));
+        }
 
-    // zoom status
-    if (!m_imgAutofit || (m_imgZoom >= 0.99f)) {
-        StatusWindow _("Zoom", 1.0f, 1.0f);
-        if (m_imgZoom >= 0.99f) {
-            ImGui::Text("%.0fx", m_imgZoom);
-        } else {
-            ImGui::Text("1/%.0fx", 1.0f / m_imgZoom);
+        // zoom status
+        if (!m_imgAutofit || (m_imgZoom >= 0.99f)) {
+            StatusWindow _("Zoom", 1.0f, 1.0f);
+            if (m_imgZoom >= 0.99f) {
+                ImGui::Text("%.0fx", m_imgZoom);
+            } else {
+                ImGui::Text("1/%.0fx", 1.0f / m_imgZoom);
+            }
         }
     }
 
@@ -203,9 +206,36 @@ void GIPS::App::drawUI() {
 
     // main window begin
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->WorkPos, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(320.0f, 360.0f), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Filters")) {
+    ImGui::SetNextWindowSize(ImVec2(320.0f, 480.0f), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Filters", nullptr, ImGuiWindowFlags_MenuBar)) {
         int oldShowIndex = m_showIndex;
+
+        // main menu
+        if (ImGui::BeginMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("Open ...", "Ctrl+O")) { showLoadUI(); }
+                if (ImGui::MenuItem("Save Result ...", "Ctrl+S")) { showSaveUI(); }
+                ImGui::Separator();
+                if (ImGui::BeginMenu("Quit")) {
+                    if (ImGui::MenuItem("Yes, really quit.", "Ctrl+Q")) { m_active = false; }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("View")) {
+                ImGui::MenuItem("Show Coordinates", nullptr, &m_showWidgets);
+                #ifndef NDEBUG
+                    ImGui::Separator();
+                    ImGui::MenuItem("Show ImGui Demo", nullptr, &m_showDemo);
+                #endif
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::MenuItem("Info")) { m_showInfo = true; }
+
+            ImGui::EndMenuBar();
+        }   // END main menu
 
         // input image
         if (TreeNodeForGIPSNode(*this)) {
@@ -223,15 +253,7 @@ void GIPS::App::drawUI() {
 
             // image source
             if (m_imgSource == ImageSource::Image) {
-                if (ImGui::Button("Load ...")) {
-                    auto path = pfd::open_file("Load Image", m_imgFilename.c_str(),
-                        { "Image Files", "*.jpg *.jpeg *.png *.bmp *.tga *.pgm *.ppm *.gif *.psd",
-                          "All Files", "*" }
-                    ).result();
-                    if (!path.empty()) {
-                        requestLoadImage(path[0].c_str());
-                    }
-                }
+                if (ImGui::Button("Open ...")) { showLoadUI(false); }
                 ImGui::SameLine();
                 ImGui::Text("%s", m_imgFilename.c_str());
                 if (ImGui::Checkbox("resize to target size if larger", &m_imgResize)) {
@@ -379,31 +401,12 @@ void GIPS::App::drawUI() {
         }
 
         // "Add Filter" button
-        if (ImGui::Button("Add Filter")) {
+        if (ImGui::Button("Add Filter ...")) {
             ImGui::OpenPopup("add_filter");
         }
         if (ImGui::BeginPopup("add_filter")) {
             ShaderBrowserMenu(*this, 0, getShaderDir());
             ImGui::EndPopup();
-        }
-
-        // "Save" button
-        ImGui::SameLine();
-        if (ImGui::Button("Save Result")) {
-            auto path = pfd::save_file(
-                "Save Image", m_lastSaveFilename,
-                { "Image Files", "*.jpg *.png *.bmp *.tga",
-                  "All Files", "*" }
-            ).result();
-            if (!path.empty()) {
-                requestSaveResult(path.c_str());
-            }
-        }
-
-        // info window open button
-        ImGui::SameLine();
-        if (ImGui::Button("Info")) {
-            m_showInfo = true;
         }
     }   // END main window
     ImGui::End();
@@ -430,6 +433,44 @@ void GIPS::App::drawUI() {
         ImGui::Text("processing time: %.1f ms", m_pipeline.lastRenderTime_ms());
         ImGui::End();
     }   // END info window
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void GIPS::App::showLoadUI(bool withShaders) {
+    std::vector<std::string> filters;
+    static const std::string extI("*.jpg *.jpeg *.png *.bmp *.tga *.pgm *.ppm *.gif *.psd");
+    static const std::string extS("*.glsl *.frag *.gips");
+    if (withShaders) {
+        filters.push_back("Image or Shader Files");
+        filters.push_back(extI + " " + extS);
+    }
+    filters.push_back("Image Files");
+    filters.push_back(extI);
+    if (withShaders) {
+        filters.push_back("Shader Files");
+        filters.push_back(extS);
+    }
+    filters.push_back("All Files");
+    filters.push_back("*");
+
+    auto path = pfd::open_file("Open Source Image or Shader", m_imgFilename.c_str(), filters).result();
+    if (!path.empty()) {
+        requestHandleFile(path[0].c_str());
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void GIPS::App::showSaveUI() {
+    auto path = pfd::save_file(
+        "Save Result Image", m_lastSaveFilename,
+        { "Image Files", "*.jpg *.png *.bmp *.tga",
+          "All Files", "*" }
+    ).result();
+    if (!path.empty()) {
+        requestSaveResult(path.c_str());
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
