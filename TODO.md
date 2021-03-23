@@ -9,7 +9,7 @@
 - [ ] dithered display
 - [X] re-arrange filters
 - [X] insert filters at arbitrary points
-- [ ] don't reload shaders on F5 if not changed
+- [X] don't reload shaders on F5 if not changed
 - [ ] poll for filter changes
 - [ ] clean uninitialization
 - [X] perf stats

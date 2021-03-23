@@ -5,6 +5,7 @@
 
 #include "gl_header.h"
 #include "gl_util.h"
+#include "file_util.h"
 
 namespace GIPS {
 
@@ -78,10 +79,11 @@ class Node {
     bool m_programChanged = true;
     bool m_enabled = true;
     bool m_wasEnabled = false;
+    FileUtil::FileFingerprint m_fp;
 
 public:
-    bool load(const char* filename, const GLutil::Shader& vs);
-    inline bool reload(const GLutil::Shader& vs) { return load(m_filename.c_str(), vs); }
+    bool load(const char* filename, const GLutil::Shader& vs, const FileUtil::FileFingerprint* fp=nullptr);
+    bool reload(const GLutil::Shader& vs, bool force=false);
 
     bool changed();
     void reset();
@@ -142,7 +144,7 @@ public:
     bool changed();
     inline void  markAsChanged() { m_pipelineChanged = true; }
 
-    void reload();
+    void reload(bool force=false);
 
     void render(GLuint srcTex, int width, int height, int maxNodes=-1);
 

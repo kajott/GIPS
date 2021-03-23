@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L  // for precise timestamps in stat()
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -81,6 +83,18 @@ bool Directory::currentItemIsDir() {
     int res = stat(fullPath, &st);
     ::free(fullPath);
     return !res && S_ISDIR(st.st_mode);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+bool FileFingerprint::update(const char* path) {
+    m_size = m_mtime = 0;
+    if (!path || !path[0]) { return false; }
+    struct stat st;
+    if (stat(path, &st)) { return false; }
+    m_size = st.st_size;
+    m_mtime = uint64_t(st.st_mtim.tv_sec) * 1000000000ULL + uint64_t(st.st_mtim.tv_nsec);
+    return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

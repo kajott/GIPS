@@ -13,6 +13,8 @@
 #include "gl_header.h"
 #include "gl_util.h"
 
+#include "file_util.h"
+
 #include "gips_core.h"
 
 namespace GIPS {
@@ -61,10 +63,21 @@ void Node::reset() {
     }
 }
 
-void Pipeline::reload() {
+bool Node::reload(const GLutil::Shader& vs, bool force) {
+    FileUtil::FileFingerprint fp(m_filename.c_str());
+    if (!force && (fp == m_fp)) {
+        #ifndef NDEBUG
+            fprintf(stderr, "not reloading '%s' (not changed)\n", m_filename.c_str());
+        #endif
+        return true;
+    }
+    return load(m_filename.c_str(), vs, &fp);
+}
+
+void Pipeline::reload(bool force) {
     m_pipelineChanged = true;
     for (size_t i = 0;  i < m_nodes.size();  ++i) {
-        m_nodes[i]->reload(m_vs);
+        m_nodes[i]->reload(m_vs, force);
     }
 }
 

@@ -286,12 +286,11 @@ bool App::handleEvents(bool wait) {
                             m_active = false;
                         }
                         break;
-                    case SDLK_F5:
-                        if (SDL_GetModState() & KMOD_CTRL) {
-                            updateImage();
-                        }
-                        m_pipeline.reload();
-                        break;
+                    case SDLK_F5: {
+                        bool force = ((SDL_GetModState() & KMOD_CTRL) != 0);
+                        if (force) { updateImage(); }
+                        m_pipeline.reload(force);
+                        break; }
                     case SDLK_F9:
                         m_showDemo = !m_showDemo;
                         break;

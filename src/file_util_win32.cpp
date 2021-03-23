@@ -76,4 +76,29 @@ bool Directory::currentItemIsDir() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+inline uint64_t makeU64(DWORD hi, DWORD lo) {
+    return (uint64_t(hi) << 32) | uint64_t(lo);
+}
+
+bool FileFingerprint::update(const char* path) {
+    m_size = m_mtime = 0;
+    if (!path || !path[0]) { return false; }
+    HANDLE hFile = CreateFileA(path, GENERIC_READ,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        nullptr, OPEN_EXISTING, 0, nullptr);
+    if (!hFile) { return false; }
+    DWORD sizeH, sizeL = GetFileSize(hFile, &sizeH);
+    if ((sizeL != INVALID_FILE_SIZE) || (GetLastError() == NO_ERROR)) {
+        m_size = makeU64(sizeH, sizeL);
+    }
+    FILETIME ft;
+    if (GetFileTime(hFile, nullptr, nullptr, &ft)) {
+        m_mtime = makeU64(ft.dwHighDateTime, ft.dwLowDateTime);
+    }
+    CloseHandle(hFile);
+    return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 }  // namespace FileUtil

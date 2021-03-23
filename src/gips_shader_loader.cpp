@@ -64,7 +64,7 @@ static const StringUtil::LookupEntry<GLSLToken> tokenMap[] = {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool Node::load(const char* filename, const GLutil::Shader& vs) {
+bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::FileFingerprint* fp) {
     // Declare all variables right here, C89-style.
     // This is required because we're using "goto end"-style error handling
     // here, and we can't jump over class initializations.
@@ -96,6 +96,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs) {
     #ifndef NDEBUG
         printf("loading shader '%s'\n", filename);
     #endif
+    if (fp) { m_fp = *fp; } else { m_fp.update(filename); }
 
     // initialize member variables to pessimistic defaults
     m_programChanged = true;

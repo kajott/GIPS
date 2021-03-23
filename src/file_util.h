@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace FileUtil {
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -35,6 +37,22 @@ public:
     inline Directory() {}
     inline Directory(const char* dir) { open(dir); }
     inline ~Directory() { close(); }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+class FileFingerprint {
+    uint64_t m_size  = 0;
+    uint64_t m_mtime = 0;
+public:
+    inline FileFingerprint() {}
+    inline FileFingerprint(const char* path) { update(path); }
+    inline bool good() const { return m_size || m_mtime; }
+    inline bool operator== (const FileFingerprint& other) const
+        { return m_size && m_mtime && (m_size == other.m_size) && (m_mtime == other.m_mtime); }
+    inline FileFingerprint& operator= (const char* path) { update(path); return *this; }
+
+    bool update(const char* path);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
