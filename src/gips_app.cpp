@@ -147,30 +147,26 @@ int App::run(int argc, char *argv[]) {
         return 1;
     }
 
-    GLutil::Shader fs(GL_FRAGMENT_SHADER,
-         "#version 330 core"
-    "\n" "uniform sampler2D gips_tex;"
-    "\n" "in vec2 gips_pos;"
-    "\n" "out vec4 gips_frag;"
-    "\n" "void main() {"
-    "\n" "  gips_frag = texture(gips_tex, gips_pos);"
-    "\n" "}"
-    "\n");
-    if (!fs.good()) {
-        fprintf(stderr, "failed to compile the main fragment shader:\n%s\n", fs.getLog());
-        return 1;
-    }
-
-    if (!m_imgProgram.link(m_pipeline.vs(), fs)) {
-        fprintf(stderr, "failed to compile the main shader program:\n%s\n", m_imgProgram.getLog());
-        return 1;
-    }
-    if (m_imgProgram.use()) {
-        m_imgProgramAreaLoc = m_imgProgram.getUniformLocation("gips_pos2ndc");
-        glUniform4f(m_imgProgram.getUniformLocation("gips_rel2map"), 0.0f, 0.0f, 1.0f, 1.0f);
-        GLutil::checkError("uniform lookup");
-    }
-    fs.free();
+    if (!m_renderDirect.init(m_pipeline.vs(), "direct rendering",
+            "#version 330 core"
+        "\n" "uniform sampler2D gips_tex;"
+        "\n" "in vec2 gips_pos;"
+        "\n" "out vec4 gips_frag;"
+        "\n" "void main() {"
+        "\n" "  gips_frag = texture(gips_tex, gips_pos);"
+        "\n" "}"
+        "\n")) { return 1; }
+    if (!m_renderWithAlpha.init(m_pipeline.vs(), "alpha-visualization rendering",
+            "#version 330 core"
+        "\n" "uniform sampler2D gips_tex;"
+        "\n" "in vec2 gips_pos;"
+        "\n" "out vec4 gips_frag;"
+        "\n" "void main() {"
+        "\n" "  vec2 cb = mod(floor(gl_FragCoord.xy * 0.125), 2.0);"
+        "\n" "  vec4 color = texture(gips_tex, gips_pos);"
+        "\n" "  gips_frag = vec4(mix(vec3(0.5 + 0.25 * abs(cb.x - cb.y)), color.rgb, color.a), 1.0);"
+        "\n" "}"
+        "\n")) { return 1; }
 
     GLint maxTex, maxVP[2];
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTex);
@@ -230,13 +226,14 @@ int App::run(int argc, char *argv[]) {
 
         // draw the main image
         updateImageGeometry();
-        if (m_imgProgram.use()) {
+        RenderProgram& renderer = m_showAlpha ? m_renderWithAlpha : m_renderDirect;
+        if (renderer.prog.use()) {
             glBindTexture(GL_TEXTURE_2D, m_pipeline.resultTex());
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             float scaleX =  2.0f / m_io->DisplaySize.x;
             float scaleY = -2.0f / m_io->DisplaySize.y;
-            glUniform4f(m_imgProgramAreaLoc,
+            glUniform4f(renderer.areaLoc,
                 scaleX * float(m_imgX0) - 1.0f,
                 scaleY * float(m_imgY0) + 1.0f,
                 scaleX * m_imgZoom * float(m_imgWidth),
@@ -260,7 +257,8 @@ int App::run(int argc, char *argv[]) {
     glUseProgram(0);
     glDeleteTextures(1, &m_imgTex);
     m_pipeline.free();
-    m_imgProgram.free();
+    m_renderDirect.prog.free();
+    m_renderWithAlpha.prog.free();
     GLutil::done();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
@@ -272,6 +270,28 @@ int App::run(int argc, char *argv[]) {
         fprintf(stderr, "bye!\n");
     #endif
     return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+bool App::RenderProgram::init(GLuint vs, const char* desc, const char* fsSource) {
+    GLutil::Shader fs(GL_FRAGMENT_SHADER, fsSource);
+    if (!fs.good()) {
+        fprintf(stderr, "failed to compile the %s fragment shader:\n%s\n", desc, fs.getLog());
+        return false;
+    }
+    if (!prog.link(vs, fs)) {
+        fprintf(stderr, "failed to compile the %s shader program:\n%s\n", desc, prog.getLog());
+        return false;
+    }
+    if (prog.use()) {
+        areaLoc = prog.getUniformLocation("gips_pos2ndc");
+        glUniform4f(prog.getUniformLocation("gips_rel2map"), 0.0f, 0.0f, 1.0f, 1.0f);
+        GLutil::checkError("uniform lookup");
+        glUseProgram(0);
+    }
+    fs.free();
+    return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -635,13 +655,13 @@ bool App::saveResult(const char* filename) {
     if (!data) { return setError("out of memory"); }
 
     // copy result into staging texture
-    m_imgProgram.use();
+    m_renderDirect.prog.use();
     glBindTexture(GL_TEXTURE_2D, m_pipeline.resultTex());
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     float scaleX =  2.0f / m_io->DisplaySize.x;
     float scaleY = -2.0f / m_io->DisplaySize.y;
-    glUniform4f(m_imgProgramAreaLoc, -1.0f, -1.0f, 2.0f, 2.0f);
+    glUniform4f(m_renderDirect.areaLoc, -1.0f, -1.0f, 2.0f, 2.0f);
     glViewport(0, 0, m_imgWidth, m_imgHeight);
     if (GLutil::checkError("saving render preparation")) { ::free(data); return setError("image retrieval failed"); }
     m_helperFBO.begin(tex);

@@ -225,6 +225,7 @@ void GIPS::App::drawUI() {
 
             if (ImGui::BeginMenu("View")) {
                 ImGui::MenuItem("Show Coordinates", nullptr, &m_showWidgets);
+                ImGui::MenuItem("Show Alpha Checkerboard", nullptr, &m_showAlpha);
                 #ifndef NDEBUG
                     ImGui::Separator();
                     ImGui::MenuItem("Show ImGui Demo", nullptr, &m_showDemo);

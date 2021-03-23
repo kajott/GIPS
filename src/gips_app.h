@@ -38,6 +38,7 @@ private:
     bool m_showWidgets = true;
     bool m_showDemo = false;
     bool m_showInfo = false;
+    bool m_showAlpha = true;
 
     // source image
     GLuint m_imgTex = 0;
@@ -57,8 +58,13 @@ private:
     int m_imgMaxSize = 1024;
 
     // rendering resources
-    GLutil::Program m_imgProgram;
-    GLint m_imgProgramAreaLoc = -1;
+    struct RenderProgram {
+        GLutil::Program prog;
+        GLint areaLoc = -1;
+        bool init(GLuint vs, const char* desc, const char *fsSource);
+    };
+    RenderProgram m_renderDirect;
+    RenderProgram m_renderWithAlpha;
     GLutil::FBO m_helperFBO;
 
     // the main event of the show

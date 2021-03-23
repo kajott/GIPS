@@ -4,7 +4,7 @@
 - [X] load filters from menu
 - [ ] load filters from ZIP file
 - [ ] more example shaders
-- [ ] transparency preview
+- [X] transparency preview
 - [ ] selectable intermediate format
 - [ ] dithered display
 - [X] re-arrange filters
@@ -34,6 +34,7 @@
 - [X] explicit precision specifier
 - [ ] zoneplate-style pattern
 - [ ] load/save pipelines and parameters
+- [ ] color picker / RGB-at-cursor information
 
 And finally:
 - [ ] version 2 with arbitrary node graphs
