@@ -128,11 +128,17 @@ void Pipeline::moveNode(int fromIndex, int toIndex) {
     m_pipelineChanged = true;
 }
 
-Pipeline::~Pipeline() {
+void Pipeline::free() {
     for (size_t i = 0;  i < m_nodes.size();  ++i) {
         delete m_nodes[i];
     }
     m_nodes.clear();
+    m_fbo.free();
+    m_vs.free();
+    if ((m_tex[0] || m_tex[1]) && GLutil::initialized) {
+        glDeleteTextures(2, m_tex);
+        m_tex[0] = m_tex[1] = 0;
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

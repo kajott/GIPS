@@ -150,7 +150,8 @@ public:
 
     inline Pipeline() {}
     Pipeline(const Pipeline&) = delete;
-    ~Pipeline();
+    void free();
+    inline ~Pipeline() { free(); }
 };
 
 

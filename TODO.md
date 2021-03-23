@@ -11,7 +11,7 @@
 - [X] insert filters at arbitrary points
 - [X] don't reload shaders on F5 if not changed
 - [ ] poll for filter changes
-- [ ] clean uninitialization
+- [X] clean uninitialization
 - [X] perf stats
 - [X] reset parameters to defaults
 - [X] dynamic scaling of the editing precision

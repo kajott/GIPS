@@ -254,6 +254,13 @@ int App::run(int argc, char *argv[]) {
     }
 
     // clean up
+    #ifndef NDEBUG
+        fprintf(stderr, "exiting ...\n");
+    #endif
+    glUseProgram(0);
+    glDeleteTextures(1, &m_imgTex);
+    m_pipeline.free();
+    m_imgProgram.free();
     GLutil::done();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
@@ -261,6 +268,9 @@ int App::run(int argc, char *argv[]) {
     SDL_GL_DeleteContext(m_glctx);
     SDL_DestroyWindow(m_window);
     SDL_Quit();
+    #ifndef NDEBUG
+        fprintf(stderr, "bye!\n");
+    #endif
     return 0;
 }
 

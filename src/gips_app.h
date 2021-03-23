@@ -56,7 +56,6 @@ private:
     int m_imgMaxSize = 1024;
 
     // rendering resources
-    GLutil::Shader m_vertexShader;
     GLutil::Program m_imgProgram;
     GLint m_imgProgramAreaLoc = -1;
     GLutil::FBO m_helperFBO;
