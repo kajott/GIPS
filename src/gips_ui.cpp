@@ -223,7 +223,28 @@ void GIPS::App::drawUI() {
                 ImGui::EndMenu();
             }
 
-            if (ImGui::BeginMenu("View")) {
+            if (ImGui::BeginMenu("Options")) {
+                if (ImGui::BeginMenu("Pipeline Pixel Format")) {
+                    std::string dc("autodetect (");
+                    bool sel = (m_requestedFormat == GIPS::PixelFormat::DontCare);
+                    if (ImGui::MenuItem((dc + GIPS::pixelFormatName(m_pipeline.format()) + ")").c_str(), nullptr, &sel)) {
+                        m_requestedFormat = PixelFormat::DontCare;
+                        m_pipeline.markAsChanged();
+                    }
+                    auto handlePixelFormat = [this] (GIPS::PixelFormat fmt) {
+                        bool sel = (m_requestedFormat == fmt);
+                        if (ImGui::MenuItem(GIPS::pixelFormatName(fmt), nullptr, &sel)) {
+                            m_requestedFormat = fmt;
+                            m_pipeline.markAsChanged();
+                        }
+                    };
+                    handlePixelFormat(GIPS::PixelFormat::Int8);
+                    handlePixelFormat(GIPS::PixelFormat::Int16);
+                    handlePixelFormat(GIPS::PixelFormat::Float16);
+                    handlePixelFormat(GIPS::PixelFormat::Float32);
+                    ImGui::EndMenu();
+                }
+                ImGui::Separator();
                 ImGui::MenuItem("Show Coordinates", nullptr, &m_showWidgets);
                 ImGui::MenuItem("Show Alpha Checkerboard", nullptr, &m_showAlpha);
                 #ifndef NDEBUG
@@ -426,10 +447,13 @@ void GIPS::App::drawUI() {
         ImGui::TextUnformatted("GIPS - The GLSL Imaging Processing System");
         ImGui::TextUnformatted("(C) 2021 Martin J. Fiedler");
         ImGui::Separator();
+        ImGui::Text("pipeline format: %dx%d, %s",
+            m_imgWidth, m_imgHeight, GIPS::pixelFormatName(m_pipeline.format()));
         ImGui::Text("estimated video memory usage: %.1f MiB",
-            // 8-bit RGBA, 4 buffers (input + 2x processing + export)
-            // + 2 buffers for the display screen
-            (m_imgWidth * m_imgHeight * 4 * 4 +
+            // = 2x 8-bit RGBA image buffers (input + export)
+            // + 2x working buffers (variable format)
+            // + 2x buffers for the display screen
+            (m_imgWidth * m_imgHeight * (2 * 4 + 2 * getBytesPerPixel(m_pipeline.format())) +
              m_io->DisplaySize.x * m_io->DisplaySize.y * 4 * 2) / 1048576.0f);
         ImGui::Text("processing time: %.1f ms", m_pipeline.lastRenderTime_ms());
         ImGui::End();

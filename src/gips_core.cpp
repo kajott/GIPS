@@ -21,6 +21,30 @@ namespace GIPS {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+int getBytesPerPixel(PixelFormat fmt) {
+    switch (fmt) {
+        case PixelFormat::Int16:
+        case PixelFormat::Float16:
+            return 8;
+        case PixelFormat::Float32:
+            return 16;
+        default:
+            return 4;
+    }
+}
+
+const char* pixelFormatName(PixelFormat fmt) {
+    switch (fmt) {
+        case PixelFormat::DontCare: return "don't care"; break;
+        case PixelFormat::Int16:    return "16-bit integer"; break;
+        case PixelFormat::Float16:  return "16-bit floating point"; break;
+        case PixelFormat::Float32:  return "32-bit floating point"; break;
+        default:                    return "8-bit integer"; break;
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 bool Parameter::changed() {
     bool res = false;
     for (int i = 0;  i < 4;  ++i) {
@@ -86,6 +110,16 @@ Parameter* Node::findParam(const char* name) {
         if (!strcmp(name, m_params[i].m_name.c_str())) { return &m_params[i]; }
     }
     return nullptr;
+}
+
+PixelFormat Pipeline::detectFormat() const {
+    PixelFormat fmt = PixelFormat::Int8;
+    for (size_t i = 0;  i < m_nodes.size();  ++i) {
+        if (m_nodes[i]->m_preferredFormat > fmt) {
+            fmt = m_nodes[i]->m_preferredFormat;
+        }
+    }
+    return fmt;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -173,26 +207,35 @@ bool Pipeline::init() {
     return m_initOK;
 }
 
-void Pipeline::render(GLuint srcTex, int width, int height, int maxNodes) {
+void Pipeline::render(GLuint srcTex, int width, int height, PixelFormat format, int maxNodes) {
     GLutil::clearError();
     if ((maxNodes < 0) || (maxNodes > nodeCount())) { maxNodes = nodeCount(); }
+    if (format == PixelFormat::DontCare) { format = detectFormat(); }
     #ifndef NDEBUG
-        fprintf(stderr, "render: %dx%d, %d nodes\n", width, height, maxNodes);
+        fprintf(stderr, "render: %dx%d, fmt #%d, %d nodes\n", width, height, static_cast<int>(format), maxNodes);
     #endif
 
     // format change?
-    if ((width != m_width) || (height != m_height)) {
+    if ((width != m_width) || (height != m_height) || (format != m_format)) {
         #ifndef NDEBUG
-            fprintf(stderr, "render format changed (was %dx%d)\n", m_width, m_height);
+            fprintf(stderr, "render format changed (was %dx%d, #%d)\n", m_width, m_height, static_cast<int>(m_format));
         #endif
         for (int i = 0;  i < 2;  ++i) {
             glBindTexture(GL_TEXTURE_2D, m_tex[i]);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            GLenum glfmt, dtype;
+            switch (format) {
+                case PixelFormat::Int16:   glfmt = GL_RGBA16;  dtype = GL_UNSIGNED_SHORT; break;
+                case PixelFormat::Float16: glfmt = GL_RGBA16F; dtype = GL_FLOAT;          break;
+                case PixelFormat::Float32: glfmt = GL_RGBA32F; dtype = GL_FLOAT;          break;
+                default:                   glfmt = GL_RGBA8;   dtype = GL_UNSIGNED_BYTE;  break;
+            }
+            glTexImage2D(GL_TEXTURE_2D, 0, glfmt, width, height, 0, GL_RGBA, dtype, nullptr);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
         GLutil::checkError("intermediate buffer allocation");
         m_width = width;
         m_height = height;
+        m_format = format;
     }
 
     // set viewport

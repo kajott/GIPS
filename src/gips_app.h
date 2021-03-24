@@ -70,6 +70,7 @@ private:
     // the main event of the show
     Pipeline m_pipeline;
     int m_showIndex = 0;
+    PixelFormat m_requestedFormat = PixelFormat::DontCare;
 
     // image geometry, zoom&pan
     int m_imgX0 = 0;

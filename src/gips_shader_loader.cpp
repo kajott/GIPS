@@ -106,6 +106,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
         const char *basename = StringUtil::pathBaseName(filename);
         m_name = std::string(basename, StringUtil::pathExtStartIndex(basename));
     }
+    m_preferredFormat = PixelFormat::DontCare;
 
     // load the file
     f = fopen(filename, "rb");
@@ -233,6 +234,12 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
                     else if (isValue("none"))  { coordMode = CoordMapMode::None; }
                     else if (isValue("relative") || isValue("rel")) { coordMode = CoordMapMode::Relative; }
                     else { err << "(GIPS) unrecognized coordinate mapping mode '" << value << "'\n"; }
+                } else if ((isKey("format") || isKey("fmt")) && needGlobal() && needValue()) {
+                         if (isValue("int8") || isValue("8") || isValue("i8") || isValue("u8")) { m_preferredFormat = PixelFormat::Int8; }
+                    else if (isValue("int16") || isValue("16") || isValue("i16") || isValue("u16")) { m_preferredFormat = PixelFormat::Int16; }
+                    else if (isValue("float16") || isValue("116") || isValue("f16") || isValue("fp16")) { m_preferredFormat = PixelFormat::Float16; }
+                    else if (isValue("float32") || isValue("132") || isValue("f32") || isValue("fp32")) { m_preferredFormat = PixelFormat::Float32; }
+                    else { err << "(GIPS) unrecognized pixel format '" << value << "'\n"; }
                 } else if ((isKey("filter") || isKey("filt")) && needGlobal() && needValue()) {
                          if (isValue("1") || isValue("on")  || isValue("linear")  || isValue("bilinear")) { texFilter = true; }
                     else if (isValue("0") || isValue("off") || isValue("nearest") || isValue("point"))    { texFilter = false; }

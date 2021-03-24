@@ -147,6 +147,21 @@ it also scans all other comments for special tokens:
     except that Y points downwards and aspect ratio correction is performed.)\
     This setting is useful for filters that perform larger-scale
     geometric distortions and don't need to address individual pixels.
+- `@format=<format>`\
+  Specify that the filter would like to use a color format with at least a
+  certain amount of precision. The format affects the whole pipeline
+  (not just the filter in question) and can be overridden by the user.
+  Formats are strictly ordered, the higest requested format from all filters
+  in the pipeline is chosen.\
+  The supported formats are, ordered by priority from lowest to highest:
+  - `@format=int8` or `@format=8`\
+    8-bit integer per component (32 bits per pixel) - `GL_RGBA8`
+  - `@format=int16` or `@format=16`\
+    16-bit integer per component (64 bits per pixel) - `GL_RGBA16`
+  - `@format=float16` or `@format=f16`\
+    16-bit floating point per component (64 bits per pixel) - `GL_RGBA16F`
+  - `@format=float32` or `@format=f32`\
+    32-bit floating point per component (128 bits per pixel) - `GL_RGBA32F`
 
 Note that the tokens for configuring the coordinate system and filtering
 must be contained in comments **before** the `run` function.

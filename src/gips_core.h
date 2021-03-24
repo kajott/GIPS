@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <type_traits>
 
 #include "gl_header.h"
 #include "gl_util.h"
@@ -29,6 +30,21 @@ enum class CoordMapMode {
     Pixel,
     Relative,
 };
+
+
+enum class PixelFormat {
+    DontCare =   0,
+    Int8     =   8,
+    Int16    =  16,
+    Float16  = 116,
+    Float32  = 132,
+};
+inline bool operator< (const PixelFormat a, const PixelFormat b) {
+    using ut = std::underlying_type_t<PixelFormat>;
+    return static_cast<ut>(a) < static_cast<ut>(b);
+}
+int getBytesPerPixel(PixelFormat fmt);
+const char* pixelFormatName(PixelFormat fmt);
 
 
 class Parameter {
@@ -80,6 +96,7 @@ class Node {
     bool m_enabled = true;
     bool m_wasEnabled = false;
     FileUtil::FileFingerprint m_fp;
+    PixelFormat m_preferredFormat = PixelFormat::DontCare;
 
 public:
     bool load(const char* filename, const GLutil::Shader& vs, const FileUtil::FileFingerprint* fp=nullptr);
@@ -114,6 +131,7 @@ class Pipeline {
     std::vector<Node*> m_nodes;
     int m_width = 0;
     int m_height = 0;
+    PixelFormat m_format = PixelFormat::DontCare;
     GLuint m_tex[2] = {0,0};
     GLutil::FBO m_fbo;
     bool m_pipelineChanged = true;
@@ -128,6 +146,7 @@ public:
     inline const GLutil::Shader& vs() const { return m_vs; }
     inline const bool   good()        const { return m_initOK; }
     inline const GLuint resultTex()   const { return m_resultTex; }
+    inline const PixelFormat format() const { return m_format; }
     inline float lastRenderTime_ms()  const { return m_lastRenderTime_ms; }
     inline const int    nodeCount()   const { return int(m_nodes.size()); }
     inline const Node&  node(int i)   const { return *m_nodes[i]; }
@@ -146,7 +165,9 @@ public:
 
     void reload(bool force=false);
 
-    void render(GLuint srcTex, int width, int height, int maxNodes=-1);
+    void render(GLuint srcTex, int width, int height, PixelFormat format=PixelFormat::DontCare, int maxNodes=-1);
+
+    PixelFormat detectFormat() const;
 
     inline Pipeline() {}
     Pipeline(const Pipeline&) = delete;

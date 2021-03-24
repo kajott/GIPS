@@ -5,7 +5,7 @@
 - [ ] load filters from ZIP file
 - [ ] more example shaders
 - [X] transparency preview
-- [ ] selectable intermediate format
+- [X] selectable intermediate format
 - [ ] dithered display
 - [X] re-arrange filters
 - [X] insert filters at arbitrary points

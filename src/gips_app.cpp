@@ -208,7 +208,7 @@ int App::run(int argc, char *argv[]) {
 
         // image processing
         if (m_pipeline.changed()) {
-            m_pipeline.render(m_imgTex, m_imgWidth, m_imgHeight, m_showIndex);
+            m_pipeline.render(m_imgTex, m_imgWidth, m_imgHeight, m_requestedFormat, m_showIndex);
         }
 
         // request to save?
