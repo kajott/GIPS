@@ -20,7 +20,7 @@
 - [X] scale input image
 - [X] multiple input patterns
 - [ ] code documentation
-- [ ] simple build scripts
+- [X] simple build scripts
 - [X] middle-click + drag to move the image
 - [X] re-arrange filters with "move to >>" menu
 - [X] don't accept global tokens in parameter comments
@@ -36,6 +36,7 @@
 - [ ] load/save pipelines and parameters
 - [ ] color picker / RGB-at-cursor information
 - [ ] version information
+- [ ] raise warning and optimization levels
 
 And finally:
 - [ ] version 2 with arbitrary node graphs

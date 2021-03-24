@@ -6,3 +6,6 @@ gips.exe
 *.ilk
 thirdparty/SDL2-*
 gips_ui.ini
+cmake-*
+vswhere.exe
+ninja.exe
