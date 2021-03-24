@@ -449,12 +449,19 @@ void GIPS::App::drawUI() {
         ImGui::Separator();
         ImGui::Text("pipeline format: %dx%d, %s",
             m_imgWidth, m_imgHeight, GIPS::pixelFormatName(m_pipeline.format()));
-        ImGui::Text("estimated video memory usage: %.1f MiB",
-            // = 2x 8-bit RGBA image buffers (input + export)
-            // + 2x working buffers (variable format)
-            // + 2x buffers for the display screen
-            (m_imgWidth * m_imgHeight * (2 * 4 + 2 * getBytesPerPixel(m_pipeline.format())) +
-             m_io->DisplaySize.x * m_io->DisplaySize.y * 4 * 2) / 1048576.0f);
+        // video memory estimator:
+        // - 1x 8-bit RGBA input image buffer
+        // - 1x 8-bit RGBA export buffer (if not running in 8-bit mode)
+        // - 2x variable-format processing buffers
+        // - 2x 8-bit RGBA buffers for the display screen
+        uint64_t area = uint64_t(m_imgWidth * m_imgHeight);
+        uint64_t mem = area * 4ull  // input
+                     + 2ull * area * getBytesPerPixel(m_pipeline.format())  // processing
+                     + 2ull * uint64_t(m_io->DisplaySize.x * m_io->DisplaySize.y) * 4ull;  // display
+        if (m_pipeline.format() != GIPS::PixelFormat::Int8) {
+            mem += area * 4ull;  // export
+        }
+        ImGui::Text("estimated video memory usage: %.1f MiB", double(mem) / 1048576.0);
         ImGui::Text("processing time: %.1f ms", m_pipeline.lastRenderTime_ms());
         ImGui::End();
     }   // END info window

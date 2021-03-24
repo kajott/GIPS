@@ -643,37 +643,45 @@ bool App::saveResult(const char* filename) {
         fprintf(stderr, "saving '%s'\n", filename);
     #endif
     m_lastSaveFilename = filename;
+    GLuint tex = 0;
+    bool needStagingTexture = (m_pipeline.format() != PixelFormat::Int8);
 
-    // create staging texture
-    GLuint tex;
-    GLutil::clearError();
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_imgWidth, m_imgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    if (GLutil::checkError("saving texture creation")) { return setError("failed to create temporary texture for saving"); }
+    if (needStagingTexture) {
+        // create staging texture
+        GLutil::clearError();
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_imgWidth, m_imgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        if (GLutil::checkError("saving texture creation")) { return setError("failed to create temporary texture for saving"); }
+
+        // copy result into staging texture
+        m_renderDirect.prog.use();
+        glBindTexture(GL_TEXTURE_2D, m_pipeline.resultTex());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        float scaleX =  2.0f / m_io->DisplaySize.x;
+        float scaleY = -2.0f / m_io->DisplaySize.y;
+        glUniform4f(m_renderDirect.areaLoc, -1.0f, -1.0f, 2.0f, 2.0f);
+        glViewport(0, 0, m_imgWidth, m_imgHeight);
+        if (GLutil::checkError("saving render preparation")) { return setError("image retrieval failed"); }
+        m_helperFBO.begin(tex);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        m_helperFBO.end();
+        if (GLutil::checkError("saving render draw operation")) { return setError("image retrieval failed"); }
+    } else {
+        // pipeline runs in 8-bit integer mode -> can read the source directly
+        tex = m_pipeline.resultTex();
+    }
+
+    // read image data from the texture
     uint8_t *data = (uint8_t*) malloc(m_imgWidth * m_imgHeight * 4);
     if (!data) { return setError("out of memory"); }
-
-    // copy result into staging texture
-    m_renderDirect.prog.use();
-    glBindTexture(GL_TEXTURE_2D, m_pipeline.resultTex());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    float scaleX =  2.0f / m_io->DisplaySize.x;
-    float scaleY = -2.0f / m_io->DisplaySize.y;
-    glUniform4f(m_renderDirect.areaLoc, -1.0f, -1.0f, 2.0f, 2.0f);
-    glViewport(0, 0, m_imgWidth, m_imgHeight);
-    if (GLutil::checkError("saving render preparation")) { ::free(data); return setError("image retrieval failed"); }
-    m_helperFBO.begin(tex);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    m_helperFBO.end();
-    if (GLutil::checkError("saving render draw operation")) { ::free(data); return setError("image retrieval failed"); }
-
-    // read and delete staging texture
     glBindTexture(GL_TEXTURE_2D, tex);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     glBindTexture(GL_TEXTURE_2D, 0);
-    glDeleteTextures(1, &tex);
+    if (needStagingTexture) {
+        glDeleteTextures(1, &tex);
+    }
     if (GLutil::checkError("saving texture readback")) { ::free(data); return setError("image retrieval failed"); }
 
     // save the image
