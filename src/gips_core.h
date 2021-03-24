@@ -40,7 +40,7 @@ enum class PixelFormat {
     Float32  = 132,
 };
 inline bool operator< (const PixelFormat a, const PixelFormat b) {
-    using ut = std::underlying_type_t<PixelFormat>;
+    using ut = std::underlying_type<PixelFormat>::type;
     return static_cast<ut>(a) < static_cast<ut>(b);
 }
 int getBytesPerPixel(PixelFormat fmt);
