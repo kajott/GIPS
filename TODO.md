@@ -36,7 +36,7 @@
 - [ ] load/save pipelines and parameters
 - [ ] color picker / RGB-at-cursor information
 - [ ] version information
-- [ ] raise warning and optimization levels
+- [X] raise warning and optimization levels
 
 And finally:
 - [ ] version 2 with arbitrary node graphs

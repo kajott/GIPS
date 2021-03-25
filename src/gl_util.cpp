@@ -59,6 +59,8 @@ GLenum checkError(const char* prefix) {
         } else {
             fprintf(stderr, "OpenGL Error: [0x%04X] %s\n", code, errorString(code));
         }
+        #else
+            (void)prefix;
         #endif
     }
     return firstError;
@@ -66,6 +68,7 @@ GLenum checkError(const char* prefix) {
 
 static void GLAPIENTRY debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam) {
     static const char *s_source, *s_type, *s_severity;
+    (void)userParam, (void)length, (void)id;
     switch (source) {
         case 0x8246: s_source = "API "; break;  // DEBUG_SOURCE_API
         case 0x8247: s_source = "WSys"; break;  // DEBUG_SOURCE_WINDOW_SYSTEM

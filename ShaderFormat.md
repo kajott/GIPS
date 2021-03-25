@@ -27,7 +27,7 @@ various usage scenarios are possible:
   It receives the RGBA color of the pixel
   and returns the output RGBA color.
 - `vec3 run(vec4 color) {...}`\
-  As above, but output RGB only and set alpha to 1.0.
+  As above, but output RGB only and keep the original alpha value.
 - `vec4 run(vec3 color) {...}`\
   The opposite direction: Receives the RGB color (alpha is ignored),
   and outputs RGBA.

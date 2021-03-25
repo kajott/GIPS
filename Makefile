@@ -11,7 +11,10 @@ _build/build.ninja:
 gips: _build/build.ninja src/*
 	ninja -C _build
 
+cppcheck:
+	cppcheck --std=c99 --std=c++11 --enable=all src
+
 clean:
 	rm -rf _build
 
-.PHONY: all clean
+.PHONY: all clean cppcheck

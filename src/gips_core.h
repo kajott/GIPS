@@ -65,14 +65,14 @@ public:
     inline Parameter() {}
     bool changed();
     void reset();
-    inline const char*         name()     const { return m_name.c_str(); }
-    inline const char*         desc()     const { return m_desc.empty() ? m_name.c_str() : m_desc.c_str(); }
-    inline const char*         format()   const { return m_format.empty() ? "%.2f" : m_format.c_str(); }
-    inline const ParameterType type()     const { return m_type; }
-    inline const float*        value()    const { return m_value; }
-    inline       float*        value()          { return m_value; }
-    inline const float         minValue() const { return m_minValue; }
-    inline const float         maxValue() const { return m_maxValue; }
+    inline const char*   name()     const { return m_name.c_str(); }
+    inline const char*   desc()     const { return m_desc.empty() ? m_name.c_str() : m_desc.c_str(); }
+    inline const char*   format()   const { return m_format.empty() ? "%.2f" : m_format.c_str(); }
+    inline ParameterType type()     const { return m_type; }
+    inline const float*  value()    const { return m_value; }
+    inline       float*  value()          { return m_value; }
+    inline       float   minValue() const { return m_minValue; }
+    inline       float   maxValue() const { return m_maxValue; }
 };
 
 
@@ -108,9 +108,9 @@ public:
     inline const char*      name()       const { return m_name.c_str(); }
     inline const char*      filename()   const { return m_filename.c_str(); }
     inline const char*      errors()     const { return m_errors.c_str(); }
-    inline const int        passCount()  const { return m_passCount; }
-    inline const bool       enabled()    const { return m_enabled; }
-    inline const int        paramCount() const { return int(m_params.size()); }
+    inline       int        passCount()  const { return m_passCount; }
+    inline       bool       enabled()    const { return m_enabled; }
+    inline       int        paramCount() const { return int(m_params.size()); }
     inline const Parameter& param(int i) const { return m_params[i]; }
     inline       Parameter& param(int i)       { return m_params[i]; }
 
@@ -143,14 +143,14 @@ class Pipeline {
 
 public:
     bool init();
-    inline const GLutil::Shader& vs() const { return m_vs; }
-    inline const bool   good()        const { return m_initOK; }
-    inline const GLuint resultTex()   const { return m_resultTex; }
-    inline const PixelFormat format() const { return m_format; }
-    inline float lastRenderTime_ms()  const { return m_lastRenderTime_ms; }
-    inline const int    nodeCount()   const { return int(m_nodes.size()); }
-    inline const Node&  node(int i)   const { return *m_nodes[i]; }
-    inline       Node&  node(int i)         { return *m_nodes[i]; }
+    inline const GLutil::Shader& vs()        const { return m_vs; }
+    inline       bool            good()      const { return m_initOK; }
+    inline       GLuint          resultTex() const { return m_resultTex; }
+    inline       PixelFormat     format()    const { return m_format; }
+    inline       float lastRenderTime_ms()   const { return m_lastRenderTime_ms; }
+    inline       int             nodeCount() const { return int(m_nodes.size()); }
+    inline const Node&           node(int i) const { return *m_nodes[i]; }
+    inline       Node&           node(int i)       { return *m_nodes[i]; }
     Node* addNode(int index=-1);
     inline Node* addNode(const char* filename, int index=-1) {
         Node* n = addNode(index);

@@ -2,9 +2,7 @@
 
 #include "imgui.h"
 
-#define NOMINMAX  // pfd includes <windows.h>, which trashes std::min and std::max
-#define PFD_SKIP_IMPLEMENTATION 1
-#include "portable-file-dialogs.h"
+#include "libs.h"  // includes wrappers for pfd functions
 
 #include "string_util.h"
 #include "dirlist.h"
@@ -58,7 +56,7 @@ struct ButtonColorOverride {
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(r * 1.125f, g * 1.125f, b * 1.125f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.25f + 0.75f * r, 0.25f + 0.75f * g, 0.25f + 0.75f * b, 1.0f));
     }
-    ButtonColorOverride(int rgb24) : ButtonColorOverride((rgb24 >> 16) / 255.0f, ((rgb24 >> 8) & 0xFF) / 255.0f, (rgb24 & 0xFF) / 255.0f) {}
+    explicit ButtonColorOverride(int rgb24) : ButtonColorOverride((rgb24 >> 16) / 255.0f, ((rgb24 >> 8) & 0xFF) / 255.0f, (rgb24 & 0xFF) / 255.0f) {}
     ~ButtonColorOverride() {
         ImGui::PopStyleColor(3);
     }
@@ -486,7 +484,7 @@ void GIPS::App::showLoadUI(bool withShaders) {
     filters.push_back("All Files");
     filters.push_back("*");
 
-    auto path = pfd::open_file("Open Source Image or Shader", m_imgFilename.c_str(), filters).result();
+    auto path = pfd_open_file_wrapper("Open Source Image or Shader", m_imgFilename, filters);
     if (!path.empty()) {
         requestHandleFile(path[0].c_str());
     }
@@ -495,11 +493,11 @@ void GIPS::App::showLoadUI(bool withShaders) {
 ///////////////////////////////////////////////////////////////////////////////
 
 void GIPS::App::showSaveUI() {
-    auto path = pfd::save_file(
+    auto path = pfd_save_file_wrapper(
         "Save Result Image", m_lastSaveFilename,
         { "Image Files", "*.jpg *.png *.bmp *.tga",
           "All Files", "*" }
-    ).result();
+    );
     if (!path.empty()) {
         requestSaveResult(path.c_str());
     }

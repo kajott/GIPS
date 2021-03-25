@@ -659,8 +659,6 @@ bool App::saveResult(const char* filename) {
         glBindTexture(GL_TEXTURE_2D, m_pipeline.resultTex());
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        float scaleX =  2.0f / m_io->DisplaySize.x;
-        float scaleY = -2.0f / m_io->DisplaySize.y;
         glUniform4f(m_renderDirect.areaLoc, -1.0f, -1.0f, 2.0f, 2.0f);
         glViewport(0, 0, m_imgWidth, m_imgHeight);
         if (GLutil::checkError("saving render preparation")) { return setError("image retrieval failed"); }

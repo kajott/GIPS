@@ -1,8 +1,22 @@
+#include "libs.h"
+
 #include "portable-file-dialogs.h"
 
-// the functions in pfd are all inline,
-// so make sure they are actually instantiated
-void pfd_dummy() {
-    (void) pfd::open_file("", "").result();
-    (void) pfd::save_file("", "").result();
+// The functions in pfd are all marked inline, which causes some optimizers
+// to throw them out completely. That's why we declare some wrappers here.
+
+std::vector<std::string> pfd_open_file_wrapper(
+    std::string const &title,
+    std::string const &default_path,
+    std::vector<std::string> const &filters
+) {
+    return pfd::open_file(title, default_path, filters).result();
+}
+
+std::string pfd_save_file_wrapper(
+    std::string const &title,
+    std::string const &default_path,
+    std::vector<std::string> const &filters
+) {
+    return pfd::save_file(title, default_path, filters).result();
 }

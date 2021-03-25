@@ -34,9 +34,9 @@ public:
     bool extendUntil(const char* pattern, bool untilEndIfNotFound=true);
     inline void extendUntilEnd() { m_pos = m_len; }
     inline const char* token()  const { return m_token; }
-    inline const int   start()  const { return m_start; }
-    inline const int   end()    const { return m_pos; }
-    inline const int   length() const { return m_pos - m_start; }
+    inline       int   start()  const { return m_start; }
+    inline       int   end()    const { return m_pos; }
+    inline       int   length() const { return m_pos - m_start; }
     inline const char* stringFromStart() const { return m_str ? &m_str[m_start] : nullptr; }
     inline const char* stringFromEnd()   const { return m_str ? &m_str[m_pos]   : nullptr; }
     inline bool isToken(const char* checkToken) const { return !strcmp(m_token, checkToken); }
@@ -44,7 +44,7 @@ public:
     char* extractToken() const;  // result must be free()'d by caller!
 
     inline Tokenizer() {}
-    inline Tokenizer(const char* str, int len=-1) { init(str, len); }
+    inline explicit Tokenizer(const char* str, int len=-1) { init(str, len); }
 };
 
 ///////////////////////////////////////////////////////////////////////////////

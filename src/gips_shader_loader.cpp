@@ -153,12 +153,12 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
                 // extract key
                 char *key = &pos[1];
                 char *value = nullptr;
-                for (pos = key;  StringUtil::isident(*pos);  ++pos) { *pos = tolower(*pos); }
+                for (pos = key;  StringUtil::isident(*pos);  ++pos) { *pos = char(tolower(*pos)); }
                 if (*pos == '=') {
                     // extract value
                     *pos = '\0';
                     value = &pos[1];
-                    for (pos = value;  StringUtil::isident(*pos);  ++pos) { *pos = tolower(*pos); }
+                    for (pos = value;  StringUtil::isident(*pos);  ++pos) { *pos = char(tolower(*pos)); }
                 }
                 // terminate key/value and move pos to character after token
                 if (*pos) { *pos++ = '\0'; }
@@ -206,7 +206,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
                     }
                     return isNum;
                 };
-                const auto setParamType = [&] (GLSLToken dt, ParameterType pt, bool fail=true) -> bool {
+                const auto setParamType = [&] (GLSLToken dt, ParameterType pt, bool fail) -> bool {
                     if (paramDataType != dt) {
                         if (fail) { err << "(GIPS) '@" << key << "' format is incompatible with uniform data type of parameter '" << param->m_name << "'\n"; }
                         return false;
@@ -223,12 +223,12 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
                 else if (isKey("int") && needParam()) { param->m_digits = 0; }
                 else if (isKey("unit") && needParam() && needValue()) { param->m_format = value; }
                 else if ((isKey("toggle") || isKey("switch")) && needParam()) {
-                    setParamType(GLSLToken::Float, ParameterType::Toggle);
+                    setParamType(GLSLToken::Float, ParameterType::Toggle, true);
                 } else if ((isKey("angle")) && needParam()) {
-                    setParamType(GLSLToken::Float, ParameterType::Angle);
+                    setParamType(GLSLToken::Float, ParameterType::Angle, true);
                 } else if (isKey("color")  && needParam()) {
                     setParamType(GLSLToken::Vec3, ParameterType::RGB, false) ||
-                    setParamType(GLSLToken::Vec4, ParameterType::RGBA);
+                    setParamType(GLSLToken::Vec4, ParameterType::RGBA, true);
                 } else if ((isKey("coord") || isKey("coords") || isKey("map")) && needGlobal() && needValue()) {
                          if (isValue("pixel")) { coordMode = CoordMapMode::Pixel; }
                     else if (isValue("none"))  { coordMode = CoordMapMode::None; }
@@ -313,9 +313,9 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
         // check if we can parse the token as a number
         if (param && inParamStatement && (paramValueIndex >= 0) && (paramValueIndex < 4)) {
             char* end = nullptr;
-            float f = strtof(tok.token(), &end);
+            float v = strtof(tok.token(), &end);
             if (end && !*end) {
-                param->m_defaultValue[paramValueIndex++] = f;
+                param->m_defaultValue[paramValueIndex++] = v;
             }
         }
 

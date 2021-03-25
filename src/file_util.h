@@ -35,7 +35,7 @@ public:
     }
 
     inline Directory() {}
-    inline Directory(const char* dir) { open(dir); }
+    inline explicit Directory(const char* dir) { open(dir); }
     inline ~Directory() { close(); }
 };
 
@@ -46,7 +46,7 @@ class FileFingerprint {
     uint64_t m_mtime = 0;
 public:
     inline FileFingerprint() {}
-    inline FileFingerprint(const char* path) { update(path); }
+    inline explicit FileFingerprint(const char* path) { update(path); }
     inline bool good() const { return m_size || m_mtime; }
     inline bool operator== (const FileFingerprint& other) const
         { return m_size && m_mtime && (m_size == other.m_size) && (m_mtime == other.m_mtime); }

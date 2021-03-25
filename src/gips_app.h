@@ -76,7 +76,7 @@ private:
     int m_imgX0 = 0;
     int m_imgY0 = 0;
     float m_imgZoom = 1.0f;
-    float m_imgAutofit = true;
+    bool m_imgAutofit = true;
     int m_panRefX = 0;
     int m_panRefY = 0;
     bool m_panning = false;

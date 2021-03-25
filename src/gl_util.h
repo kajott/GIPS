@@ -36,7 +36,7 @@ public:
     inline bool compile(GLuint type_, const char* src) { return init(type_) && compile(src); }
     void free();
     inline Shader() {}
-    inline Shader(GLuint type_) { init(type_); }
+    inline explicit Shader(GLuint type_) { init(type_); }
     inline Shader(GLuint type_, const char* src) { compile(type_, src); }
     inline ~Shader() { free(); }
     inline operator GLuint() const { return id; }

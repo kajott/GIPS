@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required (VERSION 3.15)
 
 project (GIPS)
 
@@ -36,6 +36,7 @@ else ()
     find_package (SDL2 REQUIRED)
 endif ()
 
+# set sources for main program and third-party libs
 add_executable (gips
     src/main.cpp
     src/gips_app.cpp
@@ -46,6 +47,8 @@ add_executable (gips
     src/string_util.cpp
     src/dirlist.cpp
     src/patterns.cpp
+)
+add_library (gips_thirdparty STATIC
     thirdparty/glad/src/glad.c
     thirdparty/imgui/imgui.cpp
     thirdparty/imgui/imgui_demo.cpp
@@ -58,16 +61,8 @@ add_executable (gips
     src/libs_cpp.cpp
 )
 
-if (WIN32)
-    target_sources (gips PRIVATE src/file_util_win32.cpp gips.manifest)
-    if (CMAKE_BUILD_TYPE STREQUAL "Release")
-        set_target_properties (gips PROPERTIES WIN32_EXECUTABLE ON)
-    endif ()
-else ()
-    target_sources (gips PRIVATE src/file_util_posix.cpp)
-endif ()
-
-target_include_directories (gips PRIVATE
+# set include directories
+target_include_directories (gips_thirdparty PUBLIC
     src
     ${SDL2_INCLUDE_DIRS}
     thirdparty/glad/include
@@ -76,6 +71,35 @@ target_include_directories (gips PRIVATE
     thirdparty/stb
     thirdparty/pfd
 )
+target_include_directories (gips PRIVATE src)
+
+# set library dependencies
+target_link_libraries (gips gips_thirdparty ${SDL2_LIBRARIES})
+if (WIN32)
+    target_link_libraries (gips opengl32)
+else ()
+    target_link_libraries (gips m dl GL)
+endif ()
+
+# platform-dependent additional sources and options
+if (WIN32)
+    target_sources (gips PRIVATE src/file_util_win32.cpp gips.manifest)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        set_target_properties (gips PROPERTIES WIN32_EXECUTABLE ON)
+    endif ()
+else ()
+    target_sources (gips PRIVATE src/file_util_posix.cpp)
+    set (THREADS_PREFER_PTHREAD_FLAG TRUE)
+    find_package (Threads REQUIRED)
+    target_link_libraries (gips Threads::Threads)
+endif ()
+
+# compiler options
+if(MSVC)
+    target_compile_options(gips PRIVATE /W4 /WX)
+else()
+    target_compile_options(gips PRIVATE -Wall -Wextra -pedantic -Werror -fwrapv)
+endif()
 
 # make the binary appear in the project's root directory
 set_target_properties (gips PROPERTIES
@@ -85,14 +109,3 @@ set_target_properties (gips PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL     "${CMAKE_CURRENT_LIST_DIR}"
     RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_CURRENT_LIST_DIR}"
 )
-
-# set libraries: -pthread, SDL2, and all the rest
-set (THREADS_PREFER_PTHREAD_FLAG TRUE)
-find_package (Threads REQUIRED)
-target_link_libraries (gips Threads::Threads)
-target_link_libraries (gips ${SDL2_LIBRARIES})
-if (WIN32)
-    target_link_libraries (gips opengl32)
-else ()
-    target_link_libraries (gips m dl GL)
-endif ()

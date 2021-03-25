@@ -42,11 +42,11 @@ const PatternDefinition Patterns[] = {
 
 { "Gradient", true,
 [](uint8_t* data, int width, int height, bool alpha) {
-    PRNG r(uint32_t(width * height) ^ uint32_t(width - height) + 'g'*'i'*'p'*'s');
+    PRNG r((uint32_t(width * height) ^ uint32_t(width - height)) + 'g'*'i'*'p'*'s');
 
     struct Gradient {
         int fx, fy;
-        inline Gradient(PRNG &r) {
+        inline explicit Gradient(PRNG &r) {
             float a = r.getF() * 6.28f;
             fx = int(std::sin(a) * 64.f + .5f);
             fy = int(std::cos(a) * 64.f + .5f);
@@ -67,10 +67,10 @@ const PatternDefinition Patterns[] = {
 
     // initialize colors
     const int nc = alpha ? 4 : 3;
-    struct Component { uint8_t c0; int scale; } comp[4];
+    struct Component { uint8_t c0; int scale; } comp[4] = {{0,0},{0,0},{0,0},{0,0}};
     for (int c = 0;  c < nc;  ++c) {
-        uint8_t c0 = r.getRange(c ? comp[c-1].c0 : 0,  200);
-        uint8_t c1 = r.getRange(comp[c].c0 + 1, 255);
+        uint8_t c0 = uint8_t(r.getRange(c ? comp[c-1].c0 : 0,  200));
+        uint8_t c1 = uint8_t(r.getRange(comp[c].c0 + 1, 255));
         comp[c].c0 = c0;
         comp[c].scale = (((c1 - c0) << 23) - 1) / mapDelta;
     }
@@ -118,7 +118,8 @@ const PatternDefinition Patterns[] = {
 [](uint8_t* data, int width, int height, bool alpha) {
     #define pixel(p,x,y) p[((x) + (y) * stride) << 2]
 
-    struct Recursion : public PRNG {
+    struct Recursion {
+        PRNG r;
         int stride;
         void recurse(uint8_t* p, int w, int h, int n) {
             // terminate recursion
@@ -135,14 +136,14 @@ const PatternDefinition Patterns[] = {
 
             // generate interpolated pixels (if not already done so)
             const auto addNoise = [this,n](uint8_t c) -> uint8_t {
-                return getRange(std::max(1, int(c) - n), std::min(255, int(c) + n));
+                return uint8_t(r.getRange(std::max(1, int(c) - n), std::min(255, int(c) + n)));
             };
             #define genpix(a,var,b,u,v) \
                 var = pixel(p, u, v); \
                 if (!var) { \
                     var = pixel(p, u, v) = addNoise(uint8_t((uint16_t(a) + uint16_t(b)) >> 1)); \
                 }
-            uint8_t c10, c12, c01, c21;
+            uint8_t c10 = 0, c12 = 0, c01 = 0, c21 = 0;
             if (x > 0) {
                 genpix(c00, c10, c20, x, 0);
                 genpix(c02, c12, c22, x, h);
@@ -163,7 +164,7 @@ const PatternDefinition Patterns[] = {
             recurse(&pixel(p, 0, y),     x, h - y, n);
             recurse(&pixel(p, x, y), w - x, h - y, n);
         }
-        inline Recursion(int s) : PRNG(42), stride(s) {}
+        inline explicit Recursion(int s) : r(42), stride(s) {}
     };
 
     memset(data, 0, width * height * 4);
@@ -173,10 +174,10 @@ const PatternDefinition Patterns[] = {
         const int stride = width;
         
         // generate random corner colors
-        pixel(data, 0,         0)          = uint8_t(r.getU32()) | 1;
-        pixel(data, width - 1, 0)          = uint8_t(r.getU32()) | 1;
-        pixel(data, 0,         height - 1) = uint8_t(r.getU32()) | 1;
-        pixel(data, width - 1, height - 1) = uint8_t(r.getU32()) | 1;
+        pixel(data, 0,         0)          = uint8_t(r.r.getU32()) | 1;
+        pixel(data, width - 1, 0)          = uint8_t(r.r.getU32()) | 1;
+        pixel(data, 0,         height - 1) = uint8_t(r.r.getU32()) | 1;
+        pixel(data, width - 1, height - 1) = uint8_t(r.r.getU32()) | 1;
 
         // start the interpolation
         r.recurse(data, width - 1, height - 1, 63);
@@ -254,7 +255,8 @@ const PatternDefinition Patterns[] = {
             *data++ = uint8_t(128.0 + 127.9 * std::sin(f + cPhase));
             *data++ = uint8_t(128.0 + 127.9 * std::sin(f + cPhase + 2.1f));
             *data++ = uint8_t(128.0 + 127.9 * std::sin(f + cPhase + 4.2f));
-            *data++ = 255;
+            *data++ = !alpha ? 255
+                    : uint8_t(128.0 + 127.9 * std::sin(f + cPhase + 3.1f));
         }
     }
 }},
