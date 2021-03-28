@@ -37,6 +37,10 @@
 - [ ] color picker / RGB-at-cursor information
 - [ ] version information
 - [X] raise warning and optimization levels
+- [ ] reset zoom when loading (not reloading) image
+- [ ] restrict parameter comments to same line / lose after next real token
+- [ ] allow screensaver
+- [ ] auto-resize filter window
 
 And finally:
 - [ ] version 2 with arbitrary node graphs

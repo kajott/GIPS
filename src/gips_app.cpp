@@ -95,7 +95,7 @@ int App::run(int argc, char *argv[]) {
 
     m_window = SDL_CreateWindow("GLSL Image Processing System",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        1080, 720,
+        m_targetImgWidth, m_targetImgHeight,
         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     if (m_window == nullptr) {
         fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());

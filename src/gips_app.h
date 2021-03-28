@@ -49,10 +49,10 @@ private:
     bool m_imgResize = false;
     std::string m_imgFilename;
     std::string m_lastSaveFilename;
-    int m_targetImgWidth   = 960;
-    int m_targetImgHeight  = 640;
-    int m_editTargetWidth  = 960;
-    int m_editTargetHeight = 640;
+    int m_targetImgWidth   = 1080;
+    int m_targetImgHeight  =  720;
+    int m_editTargetWidth  = 1080;
+    int m_editTargetHeight =  720;
     int m_imgWidth = 0;
     int m_imgHeight = 0;
     int m_imgMaxSize = 1024;
