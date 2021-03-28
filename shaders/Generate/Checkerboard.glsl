@@ -15,6 +15,6 @@ vec4 run(vec2 pos) {
     if (alphaOnly > 0.5) {
         return vec4(bg.rgb, fg.a);
     } else {
-        return mix(bg, fg, fg.a);
+        return vec4(mix(bg.rgb, fg.rgb, fg.a), bg.a);
     }
 }
