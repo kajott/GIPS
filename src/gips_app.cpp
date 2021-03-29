@@ -74,6 +74,8 @@ int App::run(int argc, char *argv[]) {
     m_appUIConfigFile = m_appDir + StringUtil::defaultPathSep + "gips_ui.ini";
     m_shaderDir = m_appDir + StringUtil::defaultPathSep + "shaders";
 
+    SDL_SetHint(SDL_HINT_VIDEO_ALLOW_SCREENSAVER, "1");
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
         fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
         return 1;
