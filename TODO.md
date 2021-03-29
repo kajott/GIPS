@@ -41,6 +41,7 @@
 - [ ] restrict parameter comments to same line / lose after next real token
 - [ ] allow screensaver
 - [ ] auto-resize filter window
+- [X] use textureLod / textureLodOffset
 
 And finally:
 - [ ] version 2 with arbitrary node graphs

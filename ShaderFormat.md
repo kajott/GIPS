@@ -40,9 +40,6 @@ but they can read neighbor pixels or perform geometric distortions while doing s
 This is done using the function `vec4 pixel(vec2 position)`
 that is defined in GIPS' boilerplate section.
 It looks up the RGBA color in the source image at the specified position.
-(Technically, this is a wrapper around the GLSL `texture` function
-that operates on GIPS' predefined input texture
-and performs the necessary coordinate transforms.)
 
 Pixels outside of the image area can be addressed;
 they will return the color of the closest pixel on the edge
@@ -172,10 +169,10 @@ and a `@version` tag at the very beginning of the filter, like a header:
     // @gips_version=1 @coord=pixel @filter=off
 
 
-## Predefined Uniform Variables
+## Predefined Functions and Uniform Variables
 
 Other than the user-defined uniform variables, the GIPS boilerplate exposes
-the following variables:
+the following functions and uniform variables:
 - `uniform vec2 gips_image_size`\
   The image size in pixels.
   Might be useful for custom coordinate computations in `@coord=none` mode,
@@ -183,6 +180,12 @@ the following variables:
 - `uniform sampler2D gips_tex`\
   The input texture. Note that it's always top-down
   (i.e. (0,0) is on the upper-left corner).
+- `vec4 pixel(in vec2 pos)`\
+  Fetch a texel at the specified position in the coordinate system
+  that has been set up in a `@coord` token before a pass's `run` function.\
+  This is technically a wrapper around the GLSL `textureLod` function
+  that operates on `gips_tex` with appropriate coordinate transformations
+  and a LOD of 0.
 
 
 ## Multi-Pass Filters

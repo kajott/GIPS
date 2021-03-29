@@ -87,7 +87,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
     PassInput inputs[MaxPasses];
     PassOutput outputs[MaxPasses];
     bool texFilter = true;
-    CoordMapMode coordMode = CoordMapMode::Pixel;
+    CoordMapMode coordMode = CoordMapMode::None;
     static constexpr int GLSLTokenHistorySize = 4;
     GLSLToken tt[GLSLTokenHistorySize] = { GLSLToken::Other, };
 
@@ -413,7 +413,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
         if (input == PassInput::Coord) {
             shader << "uniform vec4 gips_map2tex;\n"
                       "vec4 pixel(in vec2 pos) {\n"
-                      "  return texture(gips_tex, gips_map2tex.xy + pos * gips_map2tex.zw);\n"
+                      "  return textureLod(gips_tex, gips_map2tex.xy + pos * gips_map2tex.zw, 0.0);\n"
                       "}\n";
         }
 
