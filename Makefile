@@ -14,7 +14,22 @@ gips: _build/build.ninja src/*
 cppcheck:
 	cppcheck --std=c99 --std=c++11 --enable=all src
 
+debug:
+	$(MAKE) CMAKE_BUILD_TYPE=Debug gips
+
+release:
+	$(MAKE) CMAKE_BUILD_TYPE=Release gips
+
+test: gips
+	./gips
+
 clean:
 	rm -rf _build
 
-.PHONY: all clean cppcheck
+distclean: clean
+	rm -f gips gips_debug gips.exe gips_debug.exe *.ilk *.pdb SDL2.dll gips_ui.ini
+
+ultraclean: distclean
+	rm -f vswhere.exe ninja.exe
+
+.PHONY: all clean distclean ultraclean cppcheck debug release test

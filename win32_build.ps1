@@ -1,7 +1,25 @@
-param([switch] $ShellOnly)
+<#
+.synopsis
+    GIPS build helper
+.description
+    Locally install all required tools to build GIPS (except Visual Studio)
+    and start the build process.
+.parameter NoBuild
+    Prepare everything, but don't start the build.
+.parameter ShellOnly
+    Don't build, just create a shell where the Visual Studio Build Tools
+    are available.
+.parameter BuildType
+    Set CMAKE_BUILD_TYPE to Debug / Release / RelWithDebInfo / MinSizeRel.
+#>
+param(
+    [switch] $ShellOnly,
+    [switch] $NoBuild,
+    [string] $BuildType = "Release"
+)
 
 # switch into this script's base directory
-cd (Split-Path -Parent $PSCommandPath)
+Set-Location (Split-Path -Parent $PSCommandPath)
 
 # helper function to download the latest release of something from GitHub
 function GitHubDownload($description, $repo, $pattern, $filename) {
@@ -45,7 +63,7 @@ if ($ShellOnly) {
 if (-not (Test-Path -LiteralPath ninja.exe)) {
     GitHubDownload "Ninja" -repo ninja-build/ninja -pattern "[._-]win.*zip$" -filename ninja.zip
     Expand-Archive -Path ninja.zip -DestinationPath .
-    rm ninja.zip
+    Remove-Item ninja.zip
 }
 
 # get CMake
@@ -67,7 +85,7 @@ if (-not $cmake) {
     # download a local ZIP installation
     GitHubDownload "CMake" -repo Kitware/CMake -pattern "[._-]win.*x(86_)?64.*zip$" -filename cmake.zip
     Expand-Archive -Path "cmake.zip" -DestinationPath .
-    rm "cmake.zip"
+    Remove-Item "cmake.zip"
     $cmake = (Get-Item "cmake-*/bin/cmake.exe" | Select-Object -ExpandProperty FullName)
 }
 if (-not $cmake) {
@@ -88,7 +106,7 @@ $script = @"
 
 "@
 $script += "call `"$vcvars`"`n"
-$script += "`"$cmake`" -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl.exe -DCMAKE_CXX_COMPILER=cl.exe ..`n"
+$script += "`"$cmake`" -GNinja -DCMAKE_BUILD_TYPE=$BuildType -DCMAKE_C_COMPILER=cl.exe -DCMAKE_CXX_COMPILER=cl.exe ..`n"
 $script += @"
 @if errorlevel 1 goto end
 ..\ninja
@@ -97,4 +115,6 @@ $script += @"
 $script | Set-Content -Path _build/build.cmd -Encoding ascii
 
 # finally, run the build
-cmd /c _build\build.cmd
+if (-not $NoBuild) {
+    cmd /c _build\build.cmd
+}

@@ -2,6 +2,17 @@ cmake_minimum_required (VERSION 3.15)
 
 project (GIPS)
 
+# set default build type
+set (default_build_type "Debug")
+if (NOT CMAKE_CONFIGURATION_TYPES)
+    if (NOT CMAKE_BUILD_TYPE)
+        set (CMAKE_BUILD_TYPE "${default_build_type}" CACHE STRING "build type" FORCE)
+        set_property (CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
+    endif ()
+    message (STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
+endif ()
+
+# set C/C++ language standards for compilers that respect them
 set (CMAKE_C_STANDARD 99)
 set (CMAKE_CXX_STANDARD 11)
 
@@ -108,4 +119,5 @@ set_target_properties (gips PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_RELEASE        "${CMAKE_CURRENT_LIST_DIR}"
     RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL     "${CMAKE_CURRENT_LIST_DIR}"
     RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_CURRENT_LIST_DIR}"
+    OUTPUT_NAME_DEBUG                       "gips_debug"
 )
