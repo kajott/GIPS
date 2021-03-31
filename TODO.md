@@ -27,7 +27,7 @@
 - [ ] allow non-lowercase unit names
 - [X] angle parameter type
 - [ ] logo pattern
-- [ ] static SDL2 on Win32
+- [X] static SDL2 on Win32
 - [ ] use other, more battle-tested image loaders for PNG and JPEG
 - [ ] add hyperlink to project page in info window
 - [ ] import/export image from/to system clipboard

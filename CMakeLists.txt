@@ -16,34 +16,44 @@ endif ()
 set (CMAKE_C_STANDARD 99)
 set (CMAKE_CXX_STANDARD 11)
 
-# ensure we have a working SDL2 library; on Win32,
-# bootstrap the development libraries ourself
+# ensure we have a working SDL2 library; on Win32, bootstrap it ourselves
 if (WIN32)
+    # first, download the sources
     set (SDL2_VERSION 2.0.14)
     set (SDL2_DIR "${CMAKE_CURRENT_LIST_DIR}/thirdparty/SDL2-${SDL2_VERSION}")
-    if (NOT EXISTS "${SDL2_DIR}")
+    if (NOT EXISTS "${SDL2_DIR}/src")
         message (STATUS "${SDL2_DIR} does not exist")
-        set (SDL2_ARCHIVE "${CMAKE_CURRENT_LIST_DIR}/thirdparty/SDL2-devel-${SDL2_VERSION}-VC.zip")
+        set (SDL2_ZIPFILE "SDL2-${SDL2_VERSION}.zip")
+        set (SDL2_ARCHIVE "${CMAKE_CURRENT_LIST_DIR}/thirdparty/${SDL2_ZIPFILE}")
         if (NOT EXISTS "${SDL2_ARCHIVE}")
-            message (STATUS "downloading SDL development headers ...")
-            file (DOWNLOAD http://www.libsdl.org/release/SDL2-devel-${SDL2_VERSION}-VC.zip "${SDL2_ARCHIVE}")
+            message (STATUS "downloading SDL sources ...")
+            file (DOWNLOAD "http://www.libsdl.org/release/${SDL2_ZIPFILE}" "${SDL2_ARCHIVE}")
         endif ()
-        message (STATUS "unpacking SDL development headers ...")
+        message (STATUS "unpacking SDL sources ...")
         execute_process (COMMAND powershell Expand-Archive "${SDL2_ARCHIVE}" -DestinationPath "${CMAKE_CURRENT_LIST_DIR}/thirdparty")
     endif ()
-    if (NOT "$ARCH")
-        set (ARCH "${CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE}")
-    endif ()
-    if (NOT "$ARCH")
-        set (ARCH x64)
-    endif ()
-    set (SDL2_LIB_DIR "${SDL2_DIR}/lib/${ARCH}")
+    # set options for a minimal static SDL2 build
+    foreach (disable_
+        SDL_AUDIO SDL_RENDER DIRECTX RENDER_D3D WASAPI
+        SDL_ATOMIC SDL_CPUINFO SDL_FILE SDL_FILESYSTEM SDL_POWER SDL_LOCALE
+        SDL_HAPTIC SDL_SENSOR
+        ASSEMBLY MMX 3DNOW SSE SSE2 SSE3 SSEMATH
+        VIDEO_OPENGLES VIDEO_VULKAN
+        VIDEO_DUMMY DUMMYAUDIO DISKAUDIO
+    )
+        option ("${disable_}" OFF)
+    endforeach ()
+    set (SDL_SHARED OFF CACHE BOOL "" FORCE)
+    set (SDL_STATIC ON  CACHE BOOL "" FORCE)
+    # include SDL build directory and publish the required settings
+    message (STATUS "v v v v v v v v v v v SDL2 configure messages begin here v v v v v v v v v v")
+    add_subdirectory (${SDL2_DIR})
+    message (STATUS "^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ SDL2 configure messages end here ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^")
     set (SDL2_INCLUDE_DIRS "${SDL2_DIR}/include")
-    set (SDL2_LIBRARIES "${SDL2_LIB_DIR}/SDL2.lib" "${SDL2_LIB_DIR}/SDL2main.lib")
-    if (NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/SDL.dll")
-        file (COPY "${SDL2_LIB_DIR}/SDL2.dll" DESTINATION "${CMAKE_CURRENT_LIST_DIR}")
-    endif ()
+    set (SDL2_LIBRARIES SDL2-static SDL2main)
 else ()
+    # on systems that tend to have proper package managers,
+    # we can just use the system's default SDL2 installation
     find_package (SDL2 REQUIRED)
 endif ()
 
