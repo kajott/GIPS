@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 #define _CRT_SECURE_NO_WARNINGS  // prevent MSVC warnings
 
 #include <cstdio>

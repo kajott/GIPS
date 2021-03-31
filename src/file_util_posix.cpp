@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 #define _POSIX_C_SOURCE 200809L  // for precise timestamps in stat()
 
 #include <sys/types.h>

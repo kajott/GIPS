@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
