@@ -74,7 +74,7 @@ Currently, GIPS is in "Minimum Viable Prototype" state; this means:
 First, ensure you have all the submodules checked out
 (use `git clone --recursive` or `git submodule init --update`).
 
-GIPS is written in C++11 and  uses the CMake build system.
+GIPS is written in C++11 and uses the CMake build system.
 
 ### Linux
 
@@ -89,44 +89,38 @@ this should install everything that's needed:
 
     sudo apt install build-essential cmake libsdl2-dev ninja-build zenity
 
-Then, create a build directory, run CMake there and finally Make (or Ninja):
-
-    mkdir _build
-    cd _build
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
-    ninja
+After that, you can just run `make`;
+it creates a `_build` directory, runs CMake and finally Ninja.
 
 The executable (`gips`) will be placed in the source directory,
 *not* in the build directory.
 
 ### Windows
 
-CMake and Visual Studio 2019 (any edition, including the IDE-less
+Visual Studio 2019 (any edition, including the IDE-less
 [Build Tools](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools&rel=16))
-are required.
-Older versions of Visual Studio might also work, but are untested.
+is required. Older versions of Visual Studio might also work, but are untested.
 GCC / MinGW does *not* work currently due to an
 [issue](https://github.com/samhocevar/portable-file-dialogs/issues/50)
 in a third-party library.
 
-SDL development libraries are not required to be installed;
-a suitable SDL devkit will be automatically downloaded and extracted
-in the `thirdparty` directory.
+A simple bootstrapping script is provided; just run `win32build.sh`,
+and everything else should happen automatically:
+- the Visual Studio installation is detected
+  (for this, the [vswhere](https://github.com/microsoft/vswhere) tool
+  is downloaded and used)
+- a local copy of CMake is downloaded if there's no system-wide CMake installation
+- a copy of [Ninja](https://ninja-build.org) is downloaded and used
+- the SDL2 source code is downloaded
+- CMake and Ninja are called
 
-Generating projects for Visual Studio is possible,
-but only really useful for Debug builds:
-due to a CMake limitation,
+At the end of this process, a freshly-built `gips.exe` should have appeared
+in the source directory. Since SDL2 is used as a static library,
+it should not require any non-standard DLLs.
+
+Using CMake directly, generating projects for Visual Studio is also possible,
+but it's only really useful for Debug builds: due to a CMake limitation,
 Release builds will be generated as console executables.
-
-The recommended way of building on Windows
-is also using [Ninja](https://ninja-build.org):
-Put `ninja.exe` somewhere into the `PATH`,
-open a "x64 Native Tools Command Prompt for VS 2019",
-and use the same four commands as on Linux above.
-(If there is a GCC installation in the `PATH`, the additional arguments
-`-DCMAKE_C_COMPILER=cl.exe -DCMAKE_CXX_COMPILER=cl.exe`
-must also be specified when calling CMake.)
-
 
 
 ## Credits
@@ -143,3 +137,4 @@ Used third-party software:
 - Sean Barrett's [STB](https://github.com/nothings/stb) libs
   for image file I/O
 - Sam Hocevar's [Portable File Dialogs](https://github.com/samhocevar/portable-file-dialogs)
+- Timothy Lottes' FXAA algorithm is part of the example shaders
