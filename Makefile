@@ -24,12 +24,14 @@ test: gips
 	./gips
 
 clean:
-	rm -rf _build
+	rm -rf _build *.ilk
 
 distclean: clean
-	rm -f gips gips_debug gips.exe gips_debug.exe *.ilk *.pdb SDL2.dll gips_ui.ini
+	rm -f gips gips_debug gips.exe gips_debug.exe *.pdb
+	rm -f gips_ui.ini README.html ShaderFormat.html
 
 ultraclean: distclean
 	rm -f vswhere.exe ninja.exe
+	rm -rf cmake-* pandoc-*
 
 .PHONY: all clean distclean ultraclean cppcheck debug release test

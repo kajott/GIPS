@@ -8,5 +8,9 @@ gips_debug.exe
 thirdparty/SDL2-*
 gips_ui.ini
 cmake-*
+pandoc-*
 vswhere.exe
 ninja.exe
+README.html
+ShaderFormat.html
+GIPS*.zip

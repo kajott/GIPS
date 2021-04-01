@@ -4,6 +4,7 @@ An image processing application that applies filters
 written in the OpenGL Shading Language (GLSL).
 
 This means two things:
+
 - Everything is processed on the GPU.
 - The image is updated in realtime when parameters change.
 
@@ -60,6 +61,7 @@ Here are some specific hints for the non-obvious things:
 ## Limitations
 
 Currently, GIPS is in "Minimum Viable Prototype" state; this means:
+
 - filters can't change the image size
 - filters always have exactly one input and one output
 - filter pipeline is strictly linear, no node graphs
@@ -106,6 +108,7 @@ in a third-party library.
 
 A simple bootstrapping script is provided; just run `win32build.sh`,
 and everything else should happen automatically:
+
 - the Visual Studio installation is detected
   (for this, the [vswhere](https://github.com/microsoft/vswhere) tool
   is downloaded and used)
@@ -128,6 +131,7 @@ Release builds will be generated as console executables.
 GIPS is written by Martin J. Fiedler (<keyj@emphy.de>)
 
 Used third-party software:
+
 - [SDL2](https://www.libsdl.org)
   for window and OpenGL context creation and event handling
 - [Dear ImGui](https://github.com/ocornut/imgui)
@@ -138,3 +142,4 @@ Used third-party software:
   for image file I/O
 - Sam Hocevar's [Portable File Dialogs](https://github.com/samhocevar/portable-file-dialogs)
 - Timothy Lottes' FXAA algorithm is part of the example shaders
+- the documentation is converted from Markdown to HTML using [Pandoc](https://pandoc.org/)

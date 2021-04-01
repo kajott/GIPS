@@ -59,6 +59,7 @@ which is the comment _immediately following_ the uniform variable definition.
 
 The text of this comment is used for the parameter name,
 but the following **tokens** are recognized, interpreted and removed before:
+
 - `@min=<value>` and `@max=<value>`\
   Set the range for the sliders in the UI.
 - `@digits=<number>`\
@@ -109,6 +110,7 @@ but the following **tokens** are recognized, interpreted and removed before:
 
 GIPS not only peeks into comments after parameters;
 it also scans all other comments for special tokens:
+
 - `@version=1` or `@gips_version=1`\
   Specify the version of the GIPS shader format used for the filter.
   Currently, `1` is the only supported number.
@@ -173,6 +175,7 @@ and a `@version` tag at the very beginning of the filter, like a header:
 
 Other than the user-defined uniform variables, the GIPS boilerplate exposes
 the following functions and uniform variables:
+
 - `uniform vec2 gips_image_size`\
   The image size in pixels.
   Might be useful for custom coordinate computations in `@coord=none` mode,
