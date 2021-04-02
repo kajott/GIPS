@@ -33,7 +33,7 @@ Here are some specific hints for the non-obvious things:
 - The filters / shaders that are visible in the "Add Filter" menu
   are taken from the `shaders` subdirectory of the directory
   where the `gips`(`.exe`) executable is located.
-  - Shader files must have one of the extensions `.gips`, `.glsl` or `.frag`
+  - Shader files must have one of the extensions `.glsl`, `.frag` or `.fs`
     to be recognized.
   - New shaders can be put there any time, they will appear immediately
     when the menu is opened the next time.

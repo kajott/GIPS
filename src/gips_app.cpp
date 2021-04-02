@@ -35,7 +35,7 @@ namespace GIPS {
 bool App::isShaderFile(uint32_t extCode) {
     return (extCode == StringUtil::makeExtCode("glsl"))
         || (extCode == StringUtil::makeExtCode("frag"))
-        || (extCode == StringUtil::makeExtCode("gips"));
+        || (extCode == StringUtil::makeExtCode("fs"));
 }
 
 bool App::isImageFile(uint32_t extCode) {

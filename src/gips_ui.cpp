@@ -496,7 +496,7 @@ void GIPS::App::drawUI() {
 void GIPS::App::showLoadUI(bool withShaders) {
     std::vector<std::string> filters;
     static const std::string extI("*.jpg *.jpeg *.png *.bmp *.tga *.pgm *.ppm *.gif *.psd");
-    static const std::string extS("*.glsl *.frag *.gips");
+    static const std::string extS("*.glsl *.frag *.fs");
     if (withShaders) {
         filters.push_back("Image or Shader Files");
         filters.push_back(extI + " " + extS);
