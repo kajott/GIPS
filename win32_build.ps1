@@ -10,6 +10,8 @@
     Create a distribution package after building.
 .parameter PackageOnly
     Don't build, only create a distribution package.
+.parameter Tagged
+    Create the package with a version tag in the name.
 .parameter ShellOnly
     Don't build, just create a shell where the Visual Studio Build Tools
     are available.
@@ -21,6 +23,7 @@ param(
     [switch] $NoBuild,
     [switch] $Package,
     [switch] $PackageOnly,
+    [switch] $Tagged,
     [string] $BuildType = "Release"
 )
 
@@ -132,6 +135,26 @@ if ((-not $PackageOnly) -or $ShellOnly) {
 
 # packaging steps
 if ($PackageOnly -or ($Package -and (-not $NoBuild))) {
+    # build archive name
+    $archive = "GIPS"
+    if ($Tagged) {
+        $version = (Get-Content src/gips_version.h) -join '' -replace '(?s).*"([^"]+)".*','$1'
+        $archive += "-$version"
+        try { $rev = &git rev-parse HEAD 2>$null }
+        catch { $rev = $null }
+        try { $branch = &git rev-parse --abbrev-ref HEAD 2>$null }
+        catch { $branch = $null }
+        try { $tag = &git describe --exact-match 2>$null }
+        catch { $tag = $null }
+        if (-not "$tag") {
+            if ("$branch" -and (-not ("$branch" -eq "$rev"))) {
+                $archive += "-" + ($branch -replace '/','-')
+            }
+            $archive += "-g" + $rev.Substring(0, 7)
+        }
+    }
+    $archive += "-win32.zip"
+
     # check for existing Pandoc
     $pandoc = (Get-Item "pandoc-*/pandoc.exe" | Select-Object -ExpandProperty FullName)
 
@@ -159,5 +182,5 @@ if ($PackageOnly -or ($Package -and (-not $NoBuild))) {
 
     # create archive
     Write-Host -ForegroundColor Cyan "creating archive"
-    Compress-Archive -DestinationPath GIPS_win32.zip -Path gips.exe, LICENSE.txt, README.html, ShaderFormat.html, shaders -Force
+    Compress-Archive -DestinationPath "$archive" -Path gips.exe, LICENSE.txt, README.html, ShaderFormat.html, shaders -Force
 }
