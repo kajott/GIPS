@@ -541,6 +541,7 @@ bool App::uploadImageTexture(uint8_t* data, int width, int height, ImageSource s
     m_imgWidth = width;
     m_imgHeight = height;
     m_imgSource = src;
+    m_imgAutofit = true;
     switch (error) {
         case GL_INVALID_ENUM:  return setError("unsupported texture format");
         case GL_INVALID_VALUE: return setError("unsupported texture size");

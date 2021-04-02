@@ -37,7 +37,7 @@
 - [ ] color picker / RGB-at-cursor information
 - [ ] version information
 - [X] raise warning and optimization levels
-- [ ] reset zoom when loading (not reloading) image
+- [X] reset zoom when loading image
 - [ ] restrict parameter comments to same line / lose after next real token
 - [X] allow screensaver
 - [ ] auto-resize filter window
