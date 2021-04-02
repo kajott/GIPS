@@ -317,29 +317,31 @@ bool App::handleEvents(bool wait) {
             case SDL_QUIT:
                 m_active = false;
                 break;
-            case SDL_KEYUP: {
-                bool ctrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
-                switch (ev.key.keysym.sym) {
-                    case SDLK_o:
-                        if (ctrl) { showLoadUI(); }
-                        break;
-                    case SDLK_s:
-                        if (ctrl) { showSaveUI(); }
-                        break;
-                    case SDLK_q:
-                        if (ctrl) { m_active = false; }
-                        break;
-                    case SDLK_F1:
-                        m_showVersions = true;
-                        break;
-                    case SDLK_F5: {
-                        if (ctrl) { updateImage(); }
-                        m_pipeline.reload(ctrl);
-                        break; }
-                    default:
-                        break;
-                }
-                break; }
+            case SDL_KEYUP:
+                if (!m_io->WantCaptureKeyboard) {
+                    bool ctrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
+                    switch (ev.key.keysym.sym) {
+                        case SDLK_o:
+                            if (ctrl) { showLoadUI(); }
+                            break;
+                        case SDLK_s:
+                            if (ctrl) { showSaveUI(); }
+                            break;
+                        case SDLK_q:
+                            if (ctrl) { m_active = false; }
+                            break;
+                        case SDLK_F1:
+                            m_showVersions = true;
+                            break;
+                        case SDLK_F5: {
+                            if (ctrl) { updateImage(); }
+                            m_pipeline.reload(ctrl);
+                            break; }
+                        default:
+                            break;
+                    }   // END key switch
+                }   // END keyboard capture check
+                break;
             case SDL_MOUSEBUTTONDOWN:
                 if (!m_io->WantCaptureMouse && ((ev.button.button == SDL_BUTTON_LEFT) || (ev.button.button == SDL_BUTTON_MIDDLE))) {
                     panStart(ev.button.x, ev.button.y);
