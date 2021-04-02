@@ -35,7 +35,7 @@
 - [ ] zoneplate-style pattern
 - [ ] load/save pipelines and parameters
 - [ ] color picker / RGB-at-cursor information
-- [ ] version information
+- [X] version information
 - [X] raise warning and optimization levels
 - [X] reset zoom when loading image
 - [ ] restrict parameter comments to same line / lose after next real token

@@ -131,6 +131,9 @@ int App::run(int argc, char *argv[]) {
         return 1;
     }
     GLutil::enableDebugMessages();
+    m_glVendor   = (const char*) glGetString(GL_VENDOR);
+    m_glRenderer = (const char*) glGetString(GL_RENDERER);
+    m_glVersion  = (const char*) glGetString(GL_VERSION);
 
     ImGui::CreateContext();
     m_io = &ImGui::GetIO();
@@ -325,6 +328,9 @@ bool App::handleEvents(bool wait) {
                         break;
                     case SDLK_q:
                         if (ctrl) { m_active = false; }
+                        break;
+                    case SDLK_F1:
+                        m_showVersions = true;
                         break;
                     case SDLK_F5: {
                         if (ctrl) { updateImage(); }

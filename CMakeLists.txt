@@ -68,6 +68,7 @@ add_executable (gips
     src/string_util.cpp
     src/dirlist.cpp
     src/patterns.cpp
+    src/git_rev.c
 )
 add_library (gips_thirdparty STATIC
     thirdparty/glad/src/glad.c
@@ -121,6 +122,14 @@ if(MSVC)
 else()
     target_compile_options(gips PRIVATE -Wall -Wextra -pedantic -Werror -fwrapv)
 endif()
+
+# provide Git revision header file
+add_custom_command (
+    OUTPUT "${CMAKE_CURRENT_LIST_DIR}/src/git_rev.c"
+           and_a_dummy_file_to_force_re-running_this_every_time
+    COMMAND ${CMAKE_COMMAND}
+            -P ${CMAKE_CURRENT_LIST_DIR}/version.cmake
+)
 
 # make the binary appear in the project's root directory
 set_target_properties (gips PROPERTIES

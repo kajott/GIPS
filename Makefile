@@ -24,7 +24,7 @@ test: gips
 	./gips
 
 clean:
-	rm -rf _build *.ilk
+	rm -rf _build *.ilk src/git_rev.c
 
 distclean: clean
 	rm -f gips gips_debug gips.exe gips_debug.exe *.pdb

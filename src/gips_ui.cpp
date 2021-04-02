@@ -14,6 +14,10 @@
 
 #include "gips_app.h"
 
+#include "gips_version.h"
+extern "C" const char* git_rev;
+extern "C" const char* git_branch;
+
 ///////////////////////////////////////////////////////////////////////////////
 
 struct StatusWindow {
@@ -446,7 +450,26 @@ void GIPS::App::drawUI() {
                      ImGuiWindowFlags_AlwaysAutoResize |
                      ImGuiWindowFlags_NoResize);
         ImGui::TextUnformatted("GIPS - The GLSL Imaging Processing System");
+        if (!git_rev) {
+            ImGui::Text("Version %s", GIPS_VERSION);
+        } else if (!git_branch) {
+            ImGui::Text("Version %s (Git %s)", GIPS_VERSION, git_rev);
+        } else {
+            ImGui::Text("Version %s (Git %s %s)", GIPS_VERSION, git_branch, git_rev);
+        }
         ImGui::TextUnformatted("(C) 2021 Martin J. Fiedler");
+        ImGui::Separator();
+        if (m_showVersions) {
+            ImGui::TextUnformatted("Library Versions:");
+            SDL_version sdlVer;
+            SDL_GetVersion(&sdlVer);
+            ImGui::Text("- SDL %d.%d.%d", sdlVer.major, sdlVer.minor, sdlVer.patch);
+            ImGui::Text("- Dear ImGui %s", ImGui::GetVersion());
+            ImGui::Separator();
+        }
+        ImGui::Text("OpenGL %s", m_glVersion.c_str());
+        ImGui::TextUnformatted(m_glVendor.c_str());
+        ImGui::TextUnformatted(m_glRenderer.c_str());
         ImGui::Separator();
         ImGui::Text("pipeline format: %dx%d, %s",
             m_imgWidth, m_imgHeight, GIPS::pixelFormatName(m_pipeline.format()));

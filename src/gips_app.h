@@ -42,6 +42,12 @@ private:
     bool m_showDemo = false;
     bool m_showInfo = false;
     bool m_showAlpha = true;
+    bool m_showVersions =
+        #ifdef NDEBUG
+            false;
+        #else
+            true;
+        #endif
 
     // source image
     GLuint m_imgTex = 0;
@@ -69,6 +75,11 @@ private:
     RenderProgram m_renderDirect;
     RenderProgram m_renderWithAlpha;
     GLutil::FBO m_helperFBO;
+
+    // GL information
+    std::string m_glVendor;
+    std::string m_glRenderer;
+    std::string m_glVersion;
 
     // the main event of the show
     Pipeline m_pipeline;
