@@ -201,8 +201,8 @@ void GIPS::App::drawUI() {
             (m_statusType == StatusType::Success) ? "Success##statusMsg" :
                                                     "Message##statusMsg",
             0.5f, 1.0f, &m_statusVisible,
-            (m_statusType == StatusType::Error)   ? 0xC00000FF :
-            (m_statusType == StatusType::Success) ? 0x00A000FF :
+            (m_statusType == StatusType::Error)   ? 0xFF0000C0 :
+            (m_statusType == StatusType::Success) ? 0xFF00A000 :
                                                     0);
         if (_.shallShow) {
             ImGui::TextUnformatted(m_statusText.c_str());
