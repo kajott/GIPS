@@ -30,7 +30,9 @@
 - [X] static SDL2 on Win32
 - [ ] use other, more battle-tested image loaders for PNG and JPEG
 - [ ] add hyperlink to project page in info window
-- [ ] import/export image from/to system clipboard
+- [X] import/export image from/to system clipboard (Win32)
+- [ ] import/export image from/to system clipboard (X11)
+- [ ] import/export image from/to system clipboard (Wayland)
 - [X] explicit precision specifier
 - [ ] zoneplate-style pattern
 - [ ] load/save pipelines and parameters

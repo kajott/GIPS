@@ -105,12 +105,19 @@ endif ()
 
 # platform-dependent additional sources and options
 if (WIN32)
-    target_sources (gips PRIVATE src/file_util_win32.cpp gips.manifest)
+    target_sources (gips PRIVATE
+        src/file_util_win32.cpp
+        src/clipboard_win32.cpp
+        gips.manifest
+    )
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
         set_target_properties (gips PROPERTIES WIN32_EXECUTABLE ON)
     endif ()
 else ()
-    target_sources (gips PRIVATE src/file_util_posix.cpp)
+    target_sources (gips PRIVATE
+        src/file_util_posix.cpp
+        src/clipboard_dummy.cpp
+    )
     set (THREADS_PREFER_PTHREAD_FLAG TRUE)
     find_package (Threads REQUIRED)
     target_link_libraries (gips Threads::Threads)

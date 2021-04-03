@@ -9,7 +9,7 @@
 
 #include "string_util.h"
 #include "dirlist.h"
-
+#include "clipboard.h"
 #include "patterns.h"
 
 #include "gips_app.h"
@@ -221,6 +221,11 @@ void GIPS::App::drawUI() {
                 if (ImGui::MenuItem("Open ...", "Ctrl+O")) { showLoadUI(); }
                 if (ImGui::MenuItem("Save Result ...", "Ctrl+S")) { showSaveUI(); }
                 ImGui::Separator();
+                if (Clipboard::isAvailable()) {
+                    if (ImGui::MenuItem("Paste Image from Clipboard", "Ctrl+V")) { requestLoadClipboard(); }
+                    if (ImGui::MenuItem("Copy Image to Clipboard", "Ctrl+C")) { requestSaveClipboard(); }
+                    ImGui::Separator();
+                }
                 if (ImGui::BeginMenu("Quit")) {
                     if (ImGui::MenuItem("Yes, really quit.", "Ctrl+Q")) { m_active = false; }
                     ImGui::EndMenu();
@@ -282,7 +287,7 @@ void GIPS::App::drawUI() {
             if (m_imgSource == ImageSource::Image) {
                 if (ImGui::Button("Open ...")) { showLoadUI(false); }
                 ImGui::SameLine();
-                ImGui::Text("%s", m_imgFilename.c_str());
+                ImGui::TextUnformatted(m_clipboardImage ? "(Clipboard)" : m_imgFilename.c_str());
                 if (ImGui::Checkbox("resize to target size if larger", &m_imgResize)) {
                     requestUpdateSource();
                 }

@@ -23,6 +23,7 @@
 
 #include "string_util.h"
 #include "file_util.h"
+#include "clipboard.h"
 
 #include "patterns.h"
 
@@ -107,6 +108,7 @@ int App::run(int argc, char *argv[]) {
         return 1;
     }
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+    Clipboard::init(m_window);
 
     m_glctx = SDL_GL_CreateContext(m_window);
     if (m_glctx == nullptr) {
@@ -224,6 +226,12 @@ int App::run(int argc, char *argv[]) {
             saveResult(m_pcr.path.c_str());
             m_pcr.type = PipelineChangeRequest::Type::None;
             m_pcr.path.clear();
+            hadEvents = true;
+        }
+        if (m_pcr.type == PipelineChangeRequest::Type::SaveClipboard) {
+            saveResult(nullptr, true);
+            m_pcr.type = PipelineChangeRequest::Type::None;
+            hadEvents = true;
         }
 
         // start display rendering
@@ -326,6 +334,12 @@ bool App::handleEvents(bool wait) {
                             break;
                         case SDLK_s:
                             if (ctrl) { showSaveUI(); }
+                            break;
+                        case SDLK_c:
+                            if (ctrl) { saveResult(nullptr, true); }
+                            break;
+                        case SDLK_v:
+                            if (ctrl) { loadImage(nullptr, true, true); }
                             break;
                         case SDLK_q:
                             if (ctrl) { m_active = false; }
@@ -503,12 +517,22 @@ bool App::handlePCR() {
 
         case PipelineChangeRequest::Type::HandleFile:
             handleInputFile(m_pcr.path.c_str());
+            done = true;
             break;
 
         case PipelineChangeRequest::Type::SaveResult:
             if (isSaveImageFile(m_pcr.path.c_str())) {
                 return true;  // don't clear the PCR yet
             }
+            break;
+
+        case PipelineChangeRequest::Type::LoadClipboard:
+            loadImage(nullptr, true, true);
+            done = true;
+            break;
+
+        case PipelineChangeRequest::Type::SaveClipboard:
+            return true;  // don't clear the PCR yet
             break;
 
         default:
@@ -537,7 +561,7 @@ void App::handleInputFile(const char* filename) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool App::uploadImageTexture(uint8_t* data, int width, int height, ImageSource src) {
+bool App::uploadImageTexture(uint8_t* data, int width, int height, ImageSource src, bool mustFreeData) {
     GLutil::clearError();
     glBindTexture(GL_TEXTURE_2D, m_imgTex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -545,7 +569,7 @@ bool App::uploadImageTexture(uint8_t* data, int width, int height, ImageSource s
     glBindTexture(GL_TEXTURE_2D, 0);
     glFlush();
     glFinish();
-    ::free(data);
+    if (mustFreeData) { ::free(data); }
     m_imgWidth = width;
     m_imgHeight = height;
     m_imgSource = src;
@@ -576,22 +600,46 @@ bool App::loadColor() {
     return setSuccess();
 }
 
-bool App::loadImage(const char* filename) {
-    if (!filename || !filename[0]) {
+bool App::loadImage(const char* filename, bool useClipboard, bool updateClipboard) {
+    if (!useClipboard && (!filename || !filename[0])) {
         m_imgFilename.clear();
         return false;
     }
+    if (useClipboard && !Clipboard::isAvailable()) {
+        return setError("clipboard is not supported on this platform");
+    }
     #ifndef NDEBUG
-        fprintf(stderr, "loading image file '%s'\n", filename);
+        if (useClipboard) {
+            fprintf(stderr, "importing from clipboard\n");
+        } else {
+            fprintf(stderr, "loading image file '%s'\n", filename);
+        }
     #endif
-    m_imgFilename = filename;
+    uint8_t* rawData = nullptr;
+    bool mustFreeRawData = false;
     int rawWidth = 0, rawHeight = 0;
-    uint8_t* rawData = stbi_load(filename, &rawWidth, &rawHeight, nullptr, 4);
-    if (!rawData) { return setError("could not read image file"); }
+    if (updateClipboard || (useClipboard && !m_clipboardImage)) {
+        ::free(m_clipboardImage);
+        m_clipboardImage = Clipboard::getRGBA8Image(m_clipboardWidth, m_clipboardHeight);
+        if (!m_clipboardImage) { return setError("failed to import image from the clipboard"); }
+    }
+    if (useClipboard) {
+        rawData = (uint8_t*) m_clipboardImage;
+        if (!rawData) { return false; }
+        rawWidth = m_clipboardWidth;
+        rawHeight = m_clipboardHeight;
+    } else {
+        m_imgFilename = filename;
+        ::free(m_clipboardImage);
+        m_clipboardImage = nullptr;
+        rawData = stbi_load(filename, &rawWidth, &rawHeight, nullptr, 4);
+        if (!rawData) { return setError("failed to read image file"); }
+        mustFreeRawData = true;
+    }
     int targetWidth  = m_imgResize ? m_targetImgWidth  : m_imgMaxSize;
     int targetHeight = m_imgResize ? m_targetImgHeight : m_imgMaxSize;
     if ((rawWidth <= targetWidth) && (rawHeight <= targetHeight)) {
-        return uploadImageTexture(rawData, rawWidth, rawHeight, ImageSource::Image);
+        return uploadImageTexture(rawData, rawWidth, rawHeight, ImageSource::Image, mustFreeRawData);
     }
     int scaledWidth  = targetWidth;
     int scaledHeight = (rawHeight * scaledWidth + (rawWidth / 2)) / rawWidth;
@@ -603,12 +651,15 @@ bool App::loadImage(const char* filename) {
         fprintf(stderr, "downscaling %dx%d -> %dx%d\n", rawWidth, rawHeight, scaledWidth, scaledHeight);
     #endif
     uint8_t* scaledData = (uint8_t*) malloc(scaledWidth * scaledHeight * 4);
-    if (!scaledData) { ::free(rawData); return setError("out of memory"); }
+    if (!scaledData) {
+        if (mustFreeRawData) { ::free(rawData); }
+        return setError("out of memory");
+    }
     if (!stbir_resize_uint8(
            rawData,    rawWidth,    rawHeight, 0,
         scaledData, scaledWidth, scaledHeight, 0,
         4)) { ::free(rawData); return setError("could not downscale image"); }
-    ::free(rawData);
+    if (mustFreeRawData) { ::free(rawData); }
     return uploadImageTexture(scaledData, scaledWidth, scaledHeight, ImageSource::Image);
 }
 
@@ -641,7 +692,7 @@ bool App::loadPattern() {
 bool App::updateImage() {
     switch (m_imgSource) {
         case ImageSource::Color:   return loadColor();
-        case ImageSource::Image:   return loadImage(m_imgFilename.c_str());
+        case ImageSource::Image:   return loadImage(m_imgFilename.c_str(), !!m_clipboardImage);
         case ImageSource::Pattern: return loadPattern();
         default: return setError("unkown image source type");
     }
@@ -649,14 +700,24 @@ bool App::updateImage() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool App::saveResult(const char* filename) {
-    if (!filename || !filename[0]) { return false;} 
+bool App::saveResult(const char* filename, bool toClipboard) {
+    if (!toClipboard && (!filename || !filename[0])) { return false; }
+    if (toClipboard && !Clipboard::isAvailable()) {
+        return setError("clipboard is not supported on this platform");
+    }
+
     // assumes that filename is already validated to be one of the supported
     // formats! (otherwise we'll fail, and very lately so!)
     #ifndef NDEBUG
-        fprintf(stderr, "saving '%s'\n", filename);
+        if (toClipboard) {
+            fprintf(stderr, "saving to clipboard\n");
+        } else {
+            fprintf(stderr, "saving '%s'\n", filename);
+        }
     #endif
-    m_lastSaveFilename = filename;
+    if (!toClipboard) {
+        m_lastSaveFilename = filename;
+    }
     GLuint tex = 0;
     bool needStagingTexture = (m_pipeline.format() != PixelFormat::Int8);
 
@@ -697,28 +758,35 @@ bool App::saveResult(const char* filename) {
     if (GLutil::checkError("saving texture readback")) { ::free(data); return setError("image retrieval failed"); }
 
     // save the image
-    int res;
-    switch (StringUtil::extractExtCode(filename)) {
-        case StringUtil::makeExtCode("jpg"):
-        case StringUtil::makeExtCode("jpeg"):
-        case StringUtil::makeExtCode("jpe"):
-            res = stbi_write_jpg(filename, m_imgWidth, m_imgHeight, 4, data, 98);
-            break;
-        case StringUtil::makeExtCode("png"):
-            res = stbi_write_png(filename, m_imgWidth, m_imgHeight, 4, data, 0);
-            break;
-        case StringUtil::makeExtCode("tga"):
-            res = stbi_write_tga(filename, m_imgWidth, m_imgHeight, 4, data);
-            break;
-        case StringUtil::makeExtCode("bmp"):
-            res = stbi_write_bmp(filename, m_imgWidth, m_imgHeight, 4, data);
-            break;
-        default:
-            ::free(data); return setError("unrecognized output file format");
+    if (toClipboard) {
+        bool ok = Clipboard::setRGBA8Image(data, m_imgWidth, m_imgHeight);
+        ::free(data);
+        if (ok) { return setSuccess("image copied into the clipboard"); }
+        else    { return setError("failed copying the result image into the clipboard"); }
+    } else {
+        int res;
+        switch (StringUtil::extractExtCode(filename)) {
+            case StringUtil::makeExtCode("jpg"):
+            case StringUtil::makeExtCode("jpeg"):
+            case StringUtil::makeExtCode("jpe"):
+                res = stbi_write_jpg(filename, m_imgWidth, m_imgHeight, 4, data, 98);
+                break;
+            case StringUtil::makeExtCode("png"):
+                res = stbi_write_png(filename, m_imgWidth, m_imgHeight, 4, data, 0);
+                break;
+            case StringUtil::makeExtCode("tga"):
+                res = stbi_write_tga(filename, m_imgWidth, m_imgHeight, 4, data);
+                break;
+            case StringUtil::makeExtCode("bmp"):
+                res = stbi_write_bmp(filename, m_imgWidth, m_imgHeight, 4, data);
+                break;
+            default:
+                ::free(data); return setError("unrecognized output file format");
+        }
+        ::free(data);
+        if (res == 0) { return setError("image saving failed"); }
+        return setSuccess();
     }
-    ::free(data);
-    if (res == 0) { return setError("image saving failed"); }
-    return setSuccess();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

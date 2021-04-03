@@ -56,6 +56,9 @@ private:
     int m_imgPatternID = 0;
     bool m_imgPatternNoAlpha = true;
     bool m_imgResize = false;
+    void* m_clipboardImage = nullptr;
+    int m_clipboardWidth = 0;
+    int m_clipboardHeight = 0;
     std::string m_imgFilename;
     std::string m_lastSaveFilename;
     int m_targetImgWidth   = 1080;
@@ -121,6 +124,8 @@ private:
             UpdateSource,
             HandleFile,
             SaveResult,
+            LoadClipboard,
+            SaveClipboard,
         } type = Type::None;
         int nodeIndex = 0;    //!< node index (1-based) for all operations
         int targetIndex = 0;  //!< target index (for MoveNode only)
@@ -136,13 +141,13 @@ private:
     void showSaveUI();
 
     // image source modification functions
-    bool uploadImageTexture(uint8_t* data, int width, int height, ImageSource src);
+    bool uploadImageTexture(uint8_t* data, int width, int height, ImageSource src, bool mustFreeData=true);
     bool loadColor();
-    bool loadImage(const char* filename);
+    bool loadImage(const char* filename, bool useClipboard=false, bool updateClipboard=false);
     bool loadPattern();
     bool updateImage();
 
-    bool saveResult(const char* filename);
+    bool saveResult(const char* filename, bool toClipboard=false);
 
     //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //
 
@@ -180,6 +185,10 @@ public:
         { m_pcr.type = PipelineChangeRequest::Type::HandleFile; m_pcr.path = filename; }
     inline void requestSaveResult(const char* filename)
         { m_pcr.type = PipelineChangeRequest::Type::SaveResult; m_pcr.path = filename; }
+    inline void requestLoadClipboard()
+        { m_pcr.type = PipelineChangeRequest::Type::LoadClipboard; }
+    inline void requestSaveClipboard()
+        { m_pcr.type = PipelineChangeRequest::Type::SaveClipboard; }
 
     inline void setStatus(StatusType type, const char* msg)
         { m_statusType = type; 
