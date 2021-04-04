@@ -40,7 +40,7 @@
 - [X] version information
 - [X] raise warning and optimization levels
 - [X] reset zoom when loading image
-- [ ] restrict parameter comments to same line / lose after next real token
+- [X] restrict parameter comments to same line / lose after next real token
 - [X] allow screensaver
 - [ ] auto-resize filter window
 - [X] use textureLod / textureLodOffset

@@ -328,6 +328,11 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
             continue;
         }
 
+        // any non-symbolic statements cancels the current parameter comment
+        if (isalpha(tok.token()[0]) && !inParamStatement) {
+            param = nullptr;  // parameter comment handled, forget about the parameter
+        }
+
         // check pass definition
         // pattern: [3]="vec3/4", [2]="run[_passX]", [1]="(", [0]="vec2/3/4"
         if (((tt[3] == GLSLToken::Vec3) || (tt[3] == GLSLToken::Vec4))
