@@ -5,8 +5,8 @@ written in the OpenGL Shading Language (GLSL).
 
 This means two things:
 
-- Everything is processed on the GPU.
-- The image is updated in realtime when parameters change.
+- All filters run on the GPU.
+- Immediate, real-time feedback when changing parameters.
 
 Multiple filters can be combined into a pipeline.
 

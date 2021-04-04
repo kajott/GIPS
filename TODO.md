@@ -1,49 +1,22 @@
 # TODOs
 
-- [X] multi-pass filters
-- [X] load filters from menu
-- [ ] load filters from ZIP file
-- [ ] more example shaders
-- [X] transparency preview
-- [X] selectable intermediate format
-- [ ] dithered display
-- [X] re-arrange filters
-- [X] insert filters at arbitrary points
-- [X] don't reload shaders on F5 if not changed
-- [ ] poll for filter changes
-- [X] clean uninitialization
-- [X] perf stats
-- [X] reset parameters to defaults
-- [X] dynamic scaling of the editing precision
-- [X] don't create staging texture if format is already GL_RGBA8
-- [X] error reporting in the UI
-- [X] scale input image
-- [X] multiple input patterns
-- [ ] code documentation
-- [X] simple build scripts
-- [X] middle-click + drag to move the image
-- [X] re-arrange filters with "move to >>" menu
-- [X] don't accept global tokens in parameter comments
-- [ ] allow non-lowercase unit names
-- [X] angle parameter type
-- [ ] logo pattern
-- [X] static SDL2 on Win32
-- [ ] use other, more battle-tested image loaders for PNG and JPEG
-- [ ] add hyperlink to project page in info window
-- [X] import/export image from/to system clipboard (Win32)
-- [ ] import/export image from/to system clipboard (X11)
-- [ ] import/export image from/to system clipboard (Wayland)
-- [X] explicit precision specifier
-- [ ] zoneplate-style pattern
+- [ ] comprehensive set of example shaders
 - [ ] load/save pipelines and parameters
+- [ ] clipboard support on X11 and Wayland
+- [ ] load filters from ZIP file embedded in executable (Win32)
+- [ ] load filters from system standard directories (POSIX)
+- [ ] create a project logo
+- [ ] pattern: zoneplate
+- [ ] pattern: logo
+- [ ] add hyperlink to the project page in info window
+- [ ] use other, more battle-tested image loaders for PNG and JPEG
+- [ ] dithered display
+- [ ] automatic polling for filter changes
+- [ ] allow non-lowercase unit names
+- [ ] document the code
 - [ ] color picker / RGB-at-cursor information
-- [X] version information
-- [X] raise warning and optimization levels
-- [X] reset zoom when loading image
-- [X] restrict parameter comments to same line / lose after next real token
-- [X] allow screensaver
 - [ ] auto-resize filter window
-- [X] use textureLod / textureLodOffset
+- [ ] CI auto-build scripts
 
 And finally:
 - [ ] version 2 with arbitrary node graphs
