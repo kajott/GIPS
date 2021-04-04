@@ -121,6 +121,7 @@ private:
             ReloadNode,
             RemoveNode,
             MoveNode,
+            ClearPipeline,
             UpdateSource,
             HandleFile,
             SaveResult,
@@ -179,6 +180,8 @@ public:
         { m_pcr.type = PipelineChangeRequest::Type::RemoveNode; m_pcr.nodeIndex = nodeIndex; }
     inline void requestMoveNode(int fromIndex, int toIndex)
         { m_pcr.type = PipelineChangeRequest::Type::MoveNode; m_pcr.nodeIndex = fromIndex; m_pcr.targetIndex = toIndex; }
+    inline void requestClearPipeline()
+        { m_pcr.type = PipelineChangeRequest::Type::ClearPipeline; }
     inline void requestUpdateSource()
         { m_pcr.type = PipelineChangeRequest::Type::UpdateSource; }
     inline void requestHandleFile(const char* filename)

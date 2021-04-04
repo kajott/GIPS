@@ -509,6 +509,10 @@ bool App::handlePCR() {
             }
             break;
 
+        case PipelineChangeRequest::Type::ClearPipeline:
+            m_pipeline.clear();
+            break;
+
         case PipelineChangeRequest::Type::UpdateSource:
             if (updateImage()) {
                 m_pipeline.markAsChanged();

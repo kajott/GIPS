@@ -167,6 +167,7 @@ public:
     inline void  markAsChanged() { m_pipelineChanged = true; }
 
     void reload(bool force=false);
+    void clear();
 
     void render(GLuint srcTex, int width, int height, PixelFormat format=PixelFormat::DontCare, int maxNodes=-1);
 

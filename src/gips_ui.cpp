@@ -226,6 +226,11 @@ void GIPS::App::drawUI() {
                     if (ImGui::MenuItem("Copy Image to Clipboard", "Ctrl+C")) { requestSaveClipboard(); }
                     ImGui::Separator();
                 }
+                if (ImGui::BeginMenu("Clear Pipeline", (m_pipeline.nodeCount() > 0))) {
+                    if (ImGui::MenuItem("Yes, really clear.")) { requestClearPipeline(); }
+                    ImGui::EndMenu();
+                }
+                ImGui::Separator();
                 if (ImGui::BeginMenu("Quit")) {
                     if (ImGui::MenuItem("Yes, really quit.", "Ctrl+Q")) { m_active = false; }
                     ImGui::EndMenu();

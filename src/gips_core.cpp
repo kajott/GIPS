@@ -165,11 +165,16 @@ void Pipeline::moveNode(int fromIndex, int toIndex) {
     m_pipelineChanged = true;
 }
 
-void Pipeline::free() {
+void Pipeline::clear() {
     for (size_t i = 0;  i < m_nodes.size();  ++i) {
         delete m_nodes[i];
     }
     m_nodes.clear();
+    m_pipelineChanged = true;
+}
+
+void Pipeline::free() {
+    clear();
     m_fbo.free();
     m_vs.free();
     if ((m_tex[0] || m_tex[1]) && GLutil::initialized) {
