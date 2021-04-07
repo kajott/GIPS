@@ -192,11 +192,13 @@ int App::run(int argc, char *argv[]) {
     }
 
     // main loop
-    bool hadEvents = true;
     while (m_active) {
-        // make sure that we render *two* consecutive frames after an event
-        // before "sleeping" again; ImGui sometimes needs a frame to settle things
-        hadEvents = handleEvents(!hadEvents);
+        //
+        bool frameRequested = (m_renderFrames > 0);
+        if (frameRequested) { --m_renderFrames; }
+        if (handleEvents(!frameRequested)) {
+            requestFrames(1);
+        }
         updateImageGeometry();
 
         // process the UI
@@ -213,7 +215,7 @@ int App::run(int argc, char *argv[]) {
 
         // process pipeline changes
         if (handlePCR()) {
-            hadEvents = true;
+            requestFrames(1);
         }
 
         // image processing
@@ -226,12 +228,12 @@ int App::run(int argc, char *argv[]) {
             saveResult(m_pcr.path.c_str());
             m_pcr.type = PipelineChangeRequest::Type::None;
             m_pcr.path.clear();
-            hadEvents = true;
+            requestFrames(1);
         }
         if (m_pcr.type == PipelineChangeRequest::Type::SaveClipboard) {
             saveResult(nullptr, true);
             m_pcr.type = PipelineChangeRequest::Type::None;
-            hadEvents = true;
+            requestFrames(1);
         }
 
         // start display rendering
@@ -345,7 +347,7 @@ bool App::handleEvents(bool wait) {
                             if (ctrl) { m_active = false; }
                             break;
                         case SDLK_F1:
-                            m_showVersions = true;
+                            m_showDebug = true;
                             break;
                         case SDLK_F5: {
                             if (ctrl) { updateImage(); }

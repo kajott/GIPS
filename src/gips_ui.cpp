@@ -33,8 +33,9 @@ struct StatusWindow {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(20.0f, 20.0f));
         nPopColor = 0;
         if (color) {
-            ImGui::PushStyleColor(ImGuiCol_TitleBg, color);  ++nPopColor;
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, color);  ++nPopColor;
+            ImGui::PushStyleColor(ImGuiCol_TitleBg,       color);  ++nPopColor;
+            ImGui::PushStyleColor(ImGuiCol_TitleBgActive, color);  ++nPopColor;
+            ImGui::PushStyleColor(ImGuiCol_WindowBg,      color);  ++nPopColor;
         }
         ImGui::SetNextWindowBgAlpha(0.375f);
         shallShow = ImGui::Begin(name, p_open,
@@ -469,7 +470,7 @@ void GIPS::App::drawUI() {
         }
         ImGui::TextUnformatted("(C) 2021 Martin J. Fiedler");
         ImGui::Separator();
-        if (m_showVersions) {
+        if (m_showDebug) {
             ImGui::TextUnformatted("Library Versions:");
             SDL_version sdlVer;
             SDL_GetVersion(&sdlVer);

@@ -37,12 +37,15 @@ private:
     SDL_Window* m_window = nullptr;
     SDL_GLContext m_glctx = nullptr;
     ImGuiIO* m_io = nullptr;
+
+    // UI state
     bool m_active = true;
+    int m_renderFrames = 2;
     bool m_showWidgets = true;
     bool m_showDemo = false;
     bool m_showInfo = false;
     bool m_showAlpha = true;
-    bool m_showVersions =
+    bool m_showDebug =
         #ifdef NDEBUG
             false;
         #else
@@ -193,8 +196,11 @@ public:
     inline void requestSaveClipboard()
         { m_pcr.type = PipelineChangeRequest::Type::SaveClipboard; }
 
+    inline void requestFrames(int n)
+        { if (n > m_renderFrames) { m_renderFrames = n; } }
+
     inline void setStatus(StatusType type, const char* msg)
-        { m_statusType = type; 
+        { m_statusType = type; requestFrames(2);
           if (msg && msg[0]) { m_statusText = msg; m_statusVisible = true; }
           else { m_statusText.clear(); m_statusVisible = false; } }
 
