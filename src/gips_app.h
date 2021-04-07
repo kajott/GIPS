@@ -6,6 +6,7 @@
 #include <cstdint>
 
 #include <string>
+#include <list>
 
 #include <SDL.h>
 #include "gl_header.h"
@@ -108,12 +109,12 @@ private:
 
     // status message
     enum class StatusType {
-        Neutral,
+        Message,
         Success,
         Error,
     };
     std::string m_statusText;
-    StatusType m_statusType = StatusType::Neutral;
+    StatusType m_statusType = StatusType::Message;
     bool m_statusVisible = false;
 
     // "pipeline change requests", basically APCs for modifying the popeline
@@ -136,6 +137,15 @@ private:
         std::string path;     //!< path to load (for LoadNode and SaveResult only)
     } m_pcr;
 
+    // auto-test mode
+    std::list<std::string> m_autoTestList;
+    int m_autoTestTotal = 0;
+    int m_autoTestDone = 0;
+    int m_autoTestOK = 0;
+    int m_autoTestWarn = 0;
+    int m_autoTestFail = 0;
+
+    // event and PCR handling
     bool handleEvents(bool wait);
     bool handlePCR();
 
@@ -151,7 +161,13 @@ private:
     bool loadPattern();
     bool updateImage();
 
+    // image result saving
     bool saveResult(const char* filename, bool toClipboard=false);
+
+    // auto-test mode implementation
+    void startAutoTest(const char* scanDir=nullptr);
+    inline bool autoTestInProgress() const { return (m_autoTestTotal > 0); }
+    void handleAutoTest();
 
     //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //  //
 
@@ -204,6 +220,10 @@ public:
           if (msg && msg[0]) { m_statusText = msg; m_statusVisible = true; }
           else { m_statusText.clear(); m_statusVisible = false; } }
 
+    inline bool setMessage(const std::string& msg)
+        { setStatus(StatusType::Message, msg.c_str()); return false; }
+    inline bool setMessage(const char* msg)
+        { setStatus(StatusType::Message, msg); return false; }
     inline bool setError(const std::string& msg)
         { setStatus(StatusType::Error, msg.c_str()); return false; }
     inline bool setError(const char* msg)

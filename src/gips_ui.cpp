@@ -263,10 +263,18 @@ void GIPS::App::drawUI() {
                 ImGui::Separator();
                 ImGui::MenuItem("Show Coordinates", nullptr, &m_showWidgets);
                 ImGui::MenuItem("Show Alpha Checkerboard", nullptr, &m_showAlpha);
-                #ifndef NDEBUG
+                if (m_showDebug) {
                     ImGui::Separator();
-                    ImGui::MenuItem("Show ImGui Demo", nullptr, &m_showDemo);
-                #endif
+                    if (ImGui::BeginMenu("Debug")) {
+                        if (ImGui::MenuItem("Clear Pipeline + Auto-Test All Shaders")) {
+                            startAutoTest();
+                        }
+                        #ifndef NDEBUG
+                            ImGui::MenuItem("Show ImGui Demo", nullptr, &m_showDemo);
+                        #endif
+                        ImGui::EndMenu();
+                    }
+                }
                 ImGui::EndMenu();
             }
 

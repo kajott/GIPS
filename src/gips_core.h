@@ -110,7 +110,9 @@ public:
 
     inline const char*      name()       const { return m_name.c_str(); }
     inline const char*      filename()   const { return m_filename.c_str(); }
+    inline       bool       hasErrors()  const { return !m_errors.empty(); }
     inline const char*      errors()     const { return m_errors.c_str(); }
+    inline       bool       good()       const { return (m_passCount > 0); }
     inline       int        passCount()  const { return m_passCount; }
     inline       bool       enabled()    const { return m_enabled; }
     inline       int        paramCount() const { return int(m_params.size()); }

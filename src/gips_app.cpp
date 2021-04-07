@@ -193,7 +193,6 @@ int App::run(int argc, char *argv[]) {
 
     // main loop
     while (m_active) {
-        //
         bool frameRequested = (m_renderFrames > 0);
         if (frameRequested) { --m_renderFrames; }
         if (handleEvents(!frameRequested)) {
@@ -212,6 +211,11 @@ int App::run(int argc, char *argv[]) {
             }
         #endif
         ImGui::Render();
+
+        // handle auto-test
+        if (autoTestInProgress()) {
+            handleAutoTest();
+        }
 
         // process pipeline changes
         if (handlePCR()) {
@@ -792,6 +796,87 @@ bool App::saveResult(const char* filename, bool toClipboard) {
         ::free(data);
         if (res == 0) { return setError("image saving failed"); }
         return setSuccess();
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void App::startAutoTest(const char* scanDir) {
+    if (!scanDir) {
+        // main entry point
+        m_autoTestList.clear();
+        m_autoTestTotal = m_autoTestDone = m_autoTestOK = m_autoTestWarn = m_autoTestFail = 0;
+        startAutoTest(m_shaderDir.c_str());
+        #ifndef NDEBUG
+            fprintf(stderr, "[AutoTest] starting, %d shaders queued\n", m_autoTestTotal);
+        #endif
+        setMessage("AutoTest: testing " + std::to_string(m_autoTestTotal) + " shaders");
+        m_pipeline.clear();
+        requestFrames(2);
+        return;
+    }
+    // otherwise: scan a shader subdirectory
+    #ifndef NDEBUG
+        fprintf(stderr, "[AutoTest] scanning %s\n", scanDir);
+    #endif
+    FileUtil::Directory dir(scanDir);
+    while (dir.nextNonDot()) {
+        char* fullPath = StringUtil::pathJoin(scanDir, dir.currentItemName());
+        if (!fullPath) { continue; } 
+        if (dir.currentItemIsDir()) {
+            startAutoTest(fullPath);
+        } else if (isShaderFile(fullPath)) {
+            m_autoTestList.push_back(fullPath);
+            ++m_autoTestTotal;
+        }
+        ::free(fullPath);
+    }
+}
+
+void App::handleAutoTest() {
+    if (m_renderFrames) { return; }
+
+    // evaluate last shader's result
+    if (m_autoTestDone) {
+        const auto& node = m_pipeline.node(m_pipeline.nodeCount() - 1);
+        bool keep = true;
+        if      (!node.good())     { ++m_autoTestFail; }
+        else if (node.hasErrors()) { ++m_autoTestWarn; }
+        else         { keep = false; ++m_autoTestOK; }
+        if (!keep) {
+            m_pipeline.removeNode(m_pipeline.nodeCount() - 1);
+        }
+    }
+
+    // check if we're done
+    if (m_autoTestList.empty()) {
+        #ifndef NDEBUG
+            fprintf(stderr, "[AutoTest] finished: OK=%d warn=%d err=%d\n", m_autoTestOK, m_autoTestWarn, m_autoTestFail);
+        #endif
+        if (m_autoTestWarn || m_autoTestFail) {
+            setError("AutoTest: " + std::to_string(m_autoTestTotal) + " shaders scanned, "
+                                  + std::to_string(m_autoTestFail) + " with errors, "
+                                  + std::to_string(m_autoTestWarn) + " with warnings");
+        } else {
+            setSuccess("AutoTest: " + std::to_string(m_autoTestTotal) + " shaders scanned, no issues found");
+        }
+        m_autoTestTotal = 0;
+    }
+
+    // get next shader from the list
+    if (!m_autoTestList.empty()) {
+        const auto& filename = m_autoTestList.front();
+        #ifndef NDEBUG
+            fprintf(stderr, "[AutoTest] testing %s\n", filename.c_str());
+        #endif
+        m_pipeline.addNode(filename.c_str());
+        m_autoTestList.pop_front();
+        ++m_autoTestDone;
+        int percent = (m_autoTestDone * 100) / m_autoTestTotal;
+        setMessage("AutoTest: " + std::to_string(m_autoTestDone) + "/"
+                                + std::to_string(m_autoTestTotal) + " shaders ("
+                                + std::to_string(percent) + "%) done");
+        requestFrames(2);
     }
 }
 
