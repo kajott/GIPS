@@ -6,7 +6,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Win32 Build
-        run: win32_build.cmd -Package -Tagged
+        shell: powershell
+        run: win32_build -Package -Tagged
       - name: Archive Win32 Package
         uses: actions/upload-artifact@v2
         with:
@@ -17,6 +18,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install Prerequisites
-        run: sudo apt -y install ninja-build libsdl2-dev
+        run: |
+          suto apt -y update
+          sudo apt -y install ninja-build libsdl2-dev
       - name: Linux Build
         run: make release
