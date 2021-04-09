@@ -27,6 +27,10 @@
 
 #include "patterns.h"
 
+#include "gips_version.h"
+extern "C" const char* git_rev;
+extern "C" const char* git_branch;
+
 #include "gips_app.h"
 
 namespace GIPS {
@@ -65,6 +69,17 @@ bool App::isSaveImageFile(uint32_t extCode) {
 ///////////////////////////////////////////////////////////////////////////////
 
 int App::run(int argc, char *argv[]) {
+    #ifndef NDEBUG
+        fprintf(stderr, "Hi, this is GIPS version ");
+        if (!git_rev) {
+            fprintf(stderr, "%s\n", GIPS_VERSION);
+        } else if (!git_branch) {
+            fprintf(stderr, "%s (git %s)\n", GIPS_VERSION, git_rev);
+        } else {
+            fprintf(stderr, "%s (git %s %s)\n", GIPS_VERSION, git_branch, git_rev);
+        }
+    #endif
+
     // get app's base directory
     char* cwd = FileUtil::getCurrentDirectory();
     char *me = StringUtil::pathJoin(cwd, argv[0]);
