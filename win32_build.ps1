@@ -184,8 +184,13 @@ if ($PackageOnly -or ($Package -and (-not $NoBuild))) {
         if ($line -match '^## ') { $ok = -not ($line -match '(?i)build') }
         if ($ok) { $lines += $line }
     }
-    $lines | & $pandoc -f markdown -t html5 -s -T "About GIPS" -o README.html 2>$null
-    & $pandoc -f markdown -t html5 -s -T "GIPS Shader Format" ShaderFormat.md -o ShaderFormat.html 2>$null
+    # Pandoc will create a (totally harmless) warning here,
+    # and it's nearly impossible to make Powershell ignore it :(
+    $oldEAP = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
+    $lines | & $pandoc -f markdown -t html5 -s -T "About GIPS" -o README.html 2>&1 >$null
+    & $pandoc -f markdown -t html5 -s -T "GIPS Shader Format" ShaderFormat.md -o ShaderFormat.html 2>&1 >$null
+    $ErrorActionPreference = $oldEAP
 
     # create archive
     Write-Host -ForegroundColor Cyan "creating archive"
