@@ -81,8 +81,19 @@ void* getRGBA8Image(int &width, int &height) {
     bool headerOK = (dibSize >= sizeof(BITMAPINFOHEADER))
                  && (int(bmih->biSize) < dibSize)
                  && (bmih->biPlanes == 1)
-                 && (bmih->biCompression == BI_RGB)
-                 && ((bmih->biBitCount == 24) || (bmih->biBitCount == 32));
+                 && ( ( // format 1: classic BI_RGB, 24 or 32 bits BGR(A)
+                            (bmih->biCompression == BI_RGB)
+                        && ((bmih->biBitCount == 24) || (bmih->biBitCount == 32))
+                      ) || (
+                      // format 2: BI_BITFIELDS with BI_RGB-compatible layout
+                            (bmih->biCompression == BI_BITFIELDS)
+                        &&  (bmih->biBitCount == 32)
+                        &&  (dibSize > int(bmih->biSize + 12))
+                        &&  (((const uint32_t*)(&dibData[bmih->biSize]))[0] == 0x00FF0000u)
+                        &&  (((const uint32_t*)(&dibData[bmih->biSize]))[1] == 0x0000FF00u)
+                        &&  (((const uint32_t*)(&dibData[bmih->biSize]))[2] == 0x000000FFu)
+                      )
+                    );
     int bpp = 0;
     if (headerOK) {
         width = int(bmih->biWidth);
