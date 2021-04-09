@@ -7,7 +7,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Win32 Build
         shell: powershell
-        run: win32_build -Package -Tagged
+        run: ./win32_build.ps1 -Package -Tagged
       - name: Archive Win32 Package
         uses: actions/upload-artifact@v2
         with:
@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install Prerequisites
         run: |
-          suto apt -y update
+          sudo apt -y update
           sudo apt -y install ninja-build libsdl2-dev
       - name: Linux Build
         run: make release
