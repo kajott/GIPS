@@ -128,7 +128,13 @@ if ((-not $PackageOnly) -or $ShellOnly) {
     # finally, run the build
     if (-not $NoBuild) {
         Write-Host -ForegroundColor Cyan "starting main build process"
-        cmd /c _build\build.cmd
+        & cmd /c _build\build.cmd
+        if ($?) {
+            Write-Host -ForegroundColor Green "main build process succeeded"
+        } else {
+            Write-Host -ForegroundColor Red "main build process failed"
+            exit 1
+        }
     }
 }
 # build steps completed
