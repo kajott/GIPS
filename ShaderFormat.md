@@ -171,10 +171,10 @@ and a `@version` tag at the very beginning of the filter, like a header:
     // @gips_version=1 @coord=pixel @filter=off
 
 
-## Predefined Functions and Uniform Variables
+## Predefined Functions and Variables
 
 Other than the user-defined uniform variables, the GIPS boilerplate exposes
-the following functions and uniform variables:
+the following functions and variables:
 
 - `uniform vec2 gips_image_size`\
   The image size in pixels.
@@ -183,6 +183,8 @@ the following functions and uniform variables:
 - `uniform sampler2D gips_tex`\
   The input texture. Note that it's always top-down
   (i.e. (0,0) is on the upper-left corner).
+- `in vec2 gips_pos`\
+  The current position, in a coordinate system as if `@coord=none`.
 - `vec4 pixel(in vec2 pos)`\
   Fetch a texel at the specified position in the coordinate system
   that has been set up in a `@coord` token before a pass's `run` function.\

@@ -4,7 +4,7 @@ uniform float threshold = 1.0;  // @max=4
 uniform float range = 1.0;      // @min=0.01 @max=4
 uniform vec4  color = vec4(0.0, 0.0, 0.0, 1.0);  // @color
 uniform float preview;          // @switch show only contours
-uniform vec3  background = vec3(0.5, 0.5, 0.5);  // @color background
+uniform vec3  background = vec3(1.0, 1.0, 1.0);  // @color background
 
 vec4 run(vec2 pos) {
     vec4 center = pixel(pos);

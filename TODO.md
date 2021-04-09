@@ -17,6 +17,7 @@
 - [ ] color picker / RGB-at-cursor information
 - [ ] auto-resize filter window
 - [ ] CI auto-build scripts
+- [ ] allow longer help text for shaders
 
 And finally:
 - [ ] version 2 with arbitrary node graphs
