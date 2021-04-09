@@ -11,11 +11,14 @@ _build/build.ninja:
 gips: _build/build.ninja src/*
 	ninja -C _build
 
+gips_debug: _build/build.ninja src/*
+	ninja -C _build
+
 cppcheck:
 	cppcheck --std=c99 --std=c++11 --enable=all src
 
 debug:
-	$(MAKE) CMAKE_BUILD_TYPE=Debug gips
+	$(MAKE) CMAKE_BUILD_TYPE=Debug gips_debug
 
 release:
 	$(MAKE) CMAKE_BUILD_TYPE=Release gips

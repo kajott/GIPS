@@ -1,0 +1,22 @@
+name: Automated Builds
+on: [push]
+jobs:
+  win32-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Win32 Build
+        run: win32_build.cmd -Package -Tagged
+      - name: Archive Win32 Package
+        uses: actions/upload-artifact@v2
+        with:
+          name: win32-package
+          path: GIPS-*.zip
+  linux-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Prerequisites
+        run: sudo apt -y install ninja-build libsdl2-dev
+      - name: Linux Build
+        run: make release
