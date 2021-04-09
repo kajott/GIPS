@@ -169,6 +169,7 @@ if ($PackageOnly -or ($Package -and (-not $NoBuild))) {
         GitHubDownload "Pandoc" -repo jgm/pandoc -pattern "[._-]win.*zip$" -filename pandoc.zip
         Expand-Archive -Path pandoc.zip -DestinationPath .
         Remove-Item pandoc.zip
+        $pandoc = (Get-Item "pandoc-*/pandoc.exe" | Select-Object -ExpandProperty FullName)
     }
 
     # convert the two documentation files
