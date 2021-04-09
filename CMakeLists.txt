@@ -124,11 +124,29 @@ else ()
 endif ()
 
 # compiler options
-if(MSVC)
-    target_compile_options(gips PRIVATE /W4 /WX)
-else()
-    target_compile_options(gips PRIVATE -Wall -Wextra -pedantic -Werror -fwrapv)
-endif()
+if (NOT MSVC)
+    target_compile_options (gips PRIVATE -Wall -Wextra -pedantic -Werror -fwrapv)
+else ()
+    target_compile_options (gips PRIVATE /W4 /WX)
+endif ()
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if (NOT MSVC)
+        message (STATUS "Debug build, enabling Address Sanitizer")
+        target_compile_options (gips PRIVATE "-fsanitize=address")
+        target_compile_options (gips_thirdparty PUBLIC "-fsanitize=address")
+        target_link_options (gips PRIVATE "-fsanitize=address")
+    elseif (MSVC_VERSION GREATER 1627)
+        message (STATUS "Debug build and MSVC 16.8 or greater detected, enabling Address Sanitizer")
+        target_compile_options (gips PRIVATE "/fsanitize=address")
+        target_compile_options (gips_thirdparty PUBLIC "/fsanitize=address")
+        target_link_options (gips PRIVATE "/DEBUG")
+        # ASAN isn't compatible with the /RTC switch and incremental linking,
+        # both of which CMake enables by default
+        string (REGEX REPLACE "/RTC(su|[1su])?" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+        string (REGEX REPLACE "/RTC(su|[1su])?" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+        string (REGEX REPLACE "/INCREMENTAL" "" CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS}")
+    endif ()
+endif ()
 
 # provide Git revision header file
 add_custom_command (
