@@ -243,7 +243,7 @@ void GIPS::App::drawUI() {
                 if (ImGui::BeginMenu("Pipeline Pixel Format")) {
                     std::string dc("autodetect (");
                     bool sel = (m_requestedFormat == GIPS::PixelFormat::DontCare);
-                    if (ImGui::MenuItem((dc + GIPS::pixelFormatName(m_pipeline.format()) + ")").c_str(), nullptr, &sel)) {
+                    if (ImGui::MenuItem((dc + GIPS::pixelFormatName(m_pipeline.detectFormat()) + ")").c_str(), nullptr, &sel)) {
                         m_requestedFormat = PixelFormat::DontCare;
                         m_pipeline.markAsChanged();
                     }

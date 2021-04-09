@@ -517,6 +517,7 @@ bool App::handlePCR() {
 
         case PipelineChangeRequest::Type::ClearPipeline:
             m_pipeline.clear();
+            m_showIndex = 0;
             break;
 
         case PipelineChangeRequest::Type::UpdateSource:
