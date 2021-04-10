@@ -55,6 +55,12 @@ Here are some specific hints for the non-obvious things:
   This way, it's also possible to input values outside of the slider's range.
 - Press F5 to reload the shaders.
 - Press Ctrl+F5 to reload the shaders and the input image.
+- Press Ctrl+C to to copy the current result into the clipboard.
+  - Note that alpha isn't preserved properly.
+- Press Ctrl+V to replace the current input image with the clipboard contents.
+  - Note that not all source applications export the alpha channel.
+    (For example, GIMP and Affinity Photo do, Photoshop doesn't; 
+    also, Photoshop won't export more than 3620x3620 pixels *at all*.)
 
 
 

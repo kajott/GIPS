@@ -95,11 +95,13 @@ void* getRGBA8Image(int &width, int &height) {
                       )
                     );
     int bpp = 0;
+    int stride = 0;
     if (headerOK) {
         width = int(bmih->biWidth);
         height = std::abs(int(bmih->biHeight));
         bpp = (bmih->biBitCount == 32) ? 4 : 3;
-        headerOK = (dibSize >= (int(bmih->biSize) + width * height * bpp));
+        stride = (width * bpp + 3) & (~3);
+        headerOK = (dibSize >= (int(bmih->biSize) + height * stride));
     }
 
     // is this image in a format we can handle directly?
@@ -107,14 +109,33 @@ void* getRGBA8Image(int &width, int &height) {
         dibData += bmih->biSize;
         void *decoded = malloc(width * height * 4);
         if (decoded) {
+            uint8_t maxAlpha = (bpp > 3) ? 0 : 255;
+            int lineSkip = stride - width * bpp;
             for (int y = height - 1;  y >= 0;  --y) {
                 uint8_t* pDest = &((uint8_t*)decoded)[y * width * 4];
                 for (int x = width;  x;  --x) {
                     *pDest++ = dibData[2];
                     *pDest++ = dibData[1];
                     *pDest++ = dibData[0];
-                    *pDest++ = 255;
+                    if (bpp > 3) {
+                        *pDest++ = dibData[3];
+                        if (dibData[3] > maxAlpha) { maxAlpha = dibData[3]; }
+                    } else {
+                        *pDest++ = 255;
+                    }
                     dibData += bpp;
+                }
+                dibData += lineSkip;
+            }
+            if (maxAlpha <= 0xFF) {
+                #ifndef NDEBUG
+                    fprintf(stderr, "32-bit clipboard DIB's maximum alpha is just %d, making image fully opaque instead\n", maxAlpha);
+                #endif
+                // unplausibly low maximum alpha -> assume a fully opaque image
+                uint8_t* pDest = &((uint8_t*)decoded)[3];
+                for (int n = width * height;  n;  --n) {
+                    *pDest = 0xFF;
+                    pDest += 4;
                 }
             }
             #ifndef NDEBUG
@@ -158,10 +179,10 @@ bool setRGBA8Image(const void* image, int width, int height) {
     if (!image || (width < 1) || (height < 1)) { return false; }
 
     // create global memory handle and lock it
-    HGLOBAL hImage = GlobalAlloc(GMEM_MOVEABLE, SIZE_T(width * height * 4 + sizeof(BITMAPINFOHEADER)));
-    if (!hImage) { return false; }
-    uint8_t *dibData = (uint8_t*) GlobalLock(hImage);
-    if (!dibData) { GlobalFree(hImage); return false; }
+    HGLOBAL hDIB = GlobalAlloc(GMEM_MOVEABLE, SIZE_T(width * height * 4 + sizeof(BITMAPINFOHEADER)));
+    if (!hDIB) { return false; }
+    uint8_t *dibData = (uint8_t*) GlobalLock(hDIB);
+    if (!dibData) { GlobalFree(hDIB); return false; }
 
     // set bitmap header
     BITMAPINFOHEADER* bmih = (BITMAPINFOHEADER*) dibData;
@@ -189,13 +210,13 @@ bool setRGBA8Image(const void* image, int width, int height) {
             *dibData++ = *pSrc++;
         }
     }
-    GlobalUnlock(hImage);
+    GlobalUnlock(hDIB);
 
     // send the data to the clipboard
-    if (!OpenClipboard(hWnd)) { GlobalFree(hImage); return false; }
-    if (!EmptyClipboard()) { GlobalFree(hImage); CloseClipboard(); return false; }
-    bool ok = SetClipboardData(CF_DIB, hImage) != NULL;
-    if (!ok) { GlobalFree(hImage); }
+    if (!OpenClipboard(hWnd)) { GlobalFree(hDIB); return false; }
+    if (!EmptyClipboard()) { GlobalFree(hDIB); CloseClipboard(); return false; }
+    bool ok = SetClipboardData(CF_DIB, hDIB) != nullptr;
+    if (!ok) { GlobalFree(hDIB); }
     CloseClipboard();
     return ok;
 }

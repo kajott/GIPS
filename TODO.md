@@ -3,6 +3,7 @@
 - [ ] comprehensive set of example shaders
 - [ ] load/save pipelines and parameters
 - [ ] clipboard support on X11 and Wayland
+- [ ] PNG clipboard export on Win32
 - [ ] load filters from ZIP file embedded in executable (Win32)
 - [ ] load filters from system standard directories (POSIX)
 - [ ] create a project logo

@@ -811,7 +811,7 @@ bool App::saveResult(const char* filename, bool toClipboard) {
         }
         ::free(data);
         if (res == 0) { return setError("image saving failed"); }
-        return setSuccess();
+        return setSuccess("image saved");
     }
 }
 
