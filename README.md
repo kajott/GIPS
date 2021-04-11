@@ -29,6 +29,8 @@ on Windows systems, however, the vendor drivers must be installed.
 The usage of the program should be somewhat self-explanatory.
 Here are some specific hints for the non-obvious things:
 
+- The view can be zoomed with the mouse wheel,
+  and panned by clicking and dragging with the left or middle mouse button.
 - Use drag & drop from a file manager to load an image into GIPS.
 - The filters / shaders that are visible in the "Add Filter" menu
   are taken from the `shaders` subdirectory of the directory
@@ -97,7 +99,7 @@ this should install everything that's needed:
 
     sudo apt install build-essential cmake libsdl2-dev ninja-build zenity
 
-After that, you can just run `make`;
+After that, you can just run `make release`;
 it creates a `_build` directory, runs CMake and finally Ninja.
 
 The executable (`gips`) will be placed in the source directory,
@@ -148,4 +150,5 @@ Used third-party software:
   for image file I/O
 - Sam Hocevar's [Portable File Dialogs](https://github.com/samhocevar/portable-file-dialogs)
 - Timothy Lottes' FXAA algorithm is part of the example shaders
-- the documentation is converted from Markdown to HTML using [Pandoc](https://pandoc.org/)
+- the documentation in the Win32 binary package
+  is converted from Markdown to HTML using [Pandoc](https://pandoc.org/)

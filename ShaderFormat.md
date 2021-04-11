@@ -183,8 +183,6 @@ the following functions and variables:
 - `uniform sampler2D gips_tex`\
   The input texture. Note that it's always top-down
   (i.e. (0,0) is on the upper-left corner).
-- `in vec2 gips_pos`\
-  The current position, in a coordinate system as if `@coord=none`.
 - `vec4 pixel(in vec2 pos)`\
   Fetch a texel at the specified position in the coordinate system
   that has been set up in a `@coord` token before a pass's `run` function.\
