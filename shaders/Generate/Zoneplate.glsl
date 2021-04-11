@@ -1,4 +1,4 @@
-// @gips_version=1 @coord=rel
+// @gips_version=1 @coord=rel @filter=off
 
 uniform float frequency = 150.0;  // @min=0.1 @max=1000 @digits=1
 uniform float contrast  = 1.0;    // @max=10 @digits=2

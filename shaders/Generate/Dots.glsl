@@ -1,4 +1,4 @@
-// @gips_version=1 @coords=rel
+// @gips_version=1 @coords=rel @filter=off
 
 uniform float scale      = 1.5;  // @min=-1 @max=10 scale (logarithmic)
 uniform float angle;             // @angle

@@ -1,4 +1,4 @@
-// @gips_version=1 @coord=rel
+// @gips_version=1 @coord=rel @filter=off
 
 uniform float size   = 0.1;  // @min=0.01 @digits=2
 uniform float aspect = 0.0;  // @min=-1 @max=1
