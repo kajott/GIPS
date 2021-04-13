@@ -1,6 +1,6 @@
 # TODOs
 
-- [ ] comprehensive set of example shaders
+- [ ] more example shaders
 - [ ] load/save pipelines and parameters
 - [ ] clipboard support on X11 and Wayland
 - [ ] PNG clipboard export on Win32
