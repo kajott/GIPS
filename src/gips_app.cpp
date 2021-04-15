@@ -411,26 +411,6 @@ void App::handleDropEvent(int path_count, const char* paths[]) {
     }
 }
 
-#if 0
-bool App::handleEvents(bool wait) {
-    SDL_Event ev;
-    bool hadEvents = false;
-    if (wait) {
-        SDL_WaitEvent(nullptr);
-    }
-    while (SDL_PollEvent(&ev)) {
-        hadEvents = true;
-        ImGui_ImplSDL2_ProcessEvent(&ev);
-        switch (ev.type) {
-            case SDL_QUIT:
-                m_active = false;
-                break;
-            case SDL_KEYUP:
-                break;
-            case SDL_MOUSEMOTION:
-                break;
-#endif
-
 ///////////////////////////////////////////////////////////////////////////////
 
 float App::getFitZoom() {
