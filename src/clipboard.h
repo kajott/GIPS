@@ -3,12 +3,13 @@
 
 #pragma once
 
-#include <SDL.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 namespace Clipboard {
 
 //! initialize the clipboard
-void init(SDL_Window* window);
+void init(GLFWwindow* window);
 
 //! check whether clipboard functionality is supported at all on this platform
 bool isAvailable();

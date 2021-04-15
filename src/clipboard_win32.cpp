@@ -12,8 +12,9 @@
 
 #include <algorithm>
 
-#include <SDL.h>
-#include <SDL_syswm.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 
 #include "stb_image.h"
 
@@ -25,12 +26,8 @@ namespace Clipboard {
 
 HWND hWnd = 0;
 
-void init(SDL_Window* window) {
-    SDL_SysWMinfo info;
-    SDL_VERSION(&info.version);
-    if (SDL_GetWindowWMInfo(window, &info)) {
-        hWnd = info.info.win.window;
-    }
+void init(GLFWwindow* window) {
+    hWnd = glfwGetWin32Window(window);
 }
 
 bool isAvailable() {

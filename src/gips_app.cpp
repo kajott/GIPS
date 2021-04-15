@@ -10,12 +10,13 @@
 
 #include <algorithm>
 
-#include <SDL.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 #include "gl_header.h"
 #include "gl_util.h"
 
 #include "imgui.h"
-#include "imgui_impl_sdl.h"
+#include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "stb_image.h"
 #include "stb_image_write.h"
@@ -93,49 +94,57 @@ int App::run(int argc, char *argv[]) {
     m_appUIConfigFile = m_appDir + StringUtil::defaultPathSep + "gips_ui.ini";
     m_shaderDir = m_appDir + StringUtil::defaultPathSep + "shaders";
 
-    SDL_SetHint(SDL_HINT_VIDEO_ALLOW_SCREENSAVER, "1");
-
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
-        fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
+    if (!glfwInit()) {
+        const char* err = "unknown error";
+        glfwGetError(&err);
+        fprintf(stderr, "glfwInit failed: %s\n", err);
         return 1;
     }
 
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_RED_SIZE,     8);
-    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE,   8);
-    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,    8);
-    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE,   8);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,   0);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    glfwWindowHint(GLFW_RED_BITS,     8);
+    glfwWindowHint(GLFW_GREEN_BITS,   8);
+    glfwWindowHint(GLFW_BLUE_BITS,    8);
+    glfwWindowHint(GLFW_ALPHA_BITS,   8);
+    glfwWindowHint(GLFW_DEPTH_BITS,   0);
+    glfwWindowHint(GLFW_STENCIL_BITS, 0);
+    glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     #ifndef NDEBUG
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS,        SDL_GL_CONTEXT_DEBUG_FLAG);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
     #endif
 
-    m_window = SDL_CreateWindow("GLSL Image Processing System",
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    m_window = glfwCreateWindow(
         m_targetImgWidth, m_targetImgHeight,
-        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+        "GLSL Image Processing System",
+        nullptr, nullptr);
     if (m_window == nullptr) {
-        fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
+        const char* err = "unknown error";
+        glfwGetError(&err);
+        fprintf(stderr, "glfwCreateWindow failed: %s\n", err);
         return 1;
     }
-    SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+
+    glfwSetWindowUserPointer(m_window, static_cast<void*>(this));
+    glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
+        { static_cast<App*>(glfwGetWindowUserPointer(window))->handleKeyEvent(key, scancode, action, mods); });
+    glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods)
+        { static_cast<App*>(glfwGetWindowUserPointer(window))->handleMouseButtonEvent(button, action, mods); });
+    glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos)
+        { static_cast<App*>(glfwGetWindowUserPointer(window))->handleCursorPosEvent(xpos, ypos); });
+    glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset)
+        { static_cast<App*>(glfwGetWindowUserPointer(window))->handleScrollEvent(xoffset, yoffset); });
+    glfwSetDropCallback(m_window, [](GLFWwindow* window, int path_count, const char* paths[])
+        { static_cast<App*>(glfwGetWindowUserPointer(window))->handleDropEvent(path_count, paths); });
+
     Clipboard::init(m_window);
-
-    m_glctx = SDL_GL_CreateContext(m_window);
-    if (m_glctx == nullptr) {
-        fprintf(stderr, "SDL_GL_CreateContext failed: %s\n", SDL_GetError());
-        return 1;
-    }
-
-    SDL_GL_MakeCurrent(m_window, m_glctx);
-    SDL_GL_SetSwapInterval(1);
+    glfwMakeContextCurrent(m_window);
+    glfwSwapInterval(1);
 
     #ifdef GL_HEADER_IS_GLAD
-        if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
             fprintf(stderr, "failed to load OpenGL 3.3 functions\n");
             return 1;
         }
@@ -155,7 +164,7 @@ int App::run(int argc, char *argv[]) {
     ImGui::CreateContext();
     m_io = &ImGui::GetIO();
     m_io->IniFilename = m_appUIConfigFile.c_str();
-    ImGui_ImplSDL2_InitForOpenGL(m_window, m_glctx);
+    ImGui_ImplGlfw_InitForOpenGL(m_window, true);
     ImGui_ImplOpenGL3_Init(nullptr);
 
     glGenTextures(1, &m_imgTex);
@@ -207,17 +216,20 @@ int App::run(int argc, char *argv[]) {
     }
 
     // main loop
-    while (m_active) {
+    while (m_active && !glfwWindowShouldClose(m_window)) {
         bool frameRequested = (m_renderFrames > 0);
-        if (frameRequested) { --m_renderFrames; }
-        if (handleEvents(!frameRequested)) {
+        if (frameRequested) {
+            glfwPollEvents();
+            --m_renderFrames;
+        } else {
+            glfwWaitEvents();
             requestFrames(1);
         }
         updateImageGeometry();
 
         // process the UI
         ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL2_NewFrame(m_window);
+        ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         drawUI();
         #ifndef NDEBUG
@@ -284,7 +296,7 @@ int App::run(int argc, char *argv[]) {
         // draw the GUI and finish the frame
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         GLutil::checkError("GUI draw");
-        SDL_GL_SwapWindow(m_window);
+        glfwSwapBuffers(m_window);
     }
 
     // clean up
@@ -298,11 +310,10 @@ int App::run(int argc, char *argv[]) {
     m_renderWithAlpha.prog.free();
     GLutil::done();
     ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-    SDL_GL_DeleteContext(m_glctx);
-    SDL_DestroyWindow(m_window);
-    SDL_Quit();
+    glfwDestroyWindow(m_window);
+    glfwTerminate();
     #ifndef NDEBUG
         fprintf(stderr, "bye!\n");
     #endif
@@ -333,6 +344,74 @@ bool App::RenderProgram::init(GLuint vs, const char* desc, const char* fsSource)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+void App::handleKeyEvent(int key, int scancode, int action, int mods) {
+    (void)scancode;
+    if ((action != GLFW_PRESS) || m_io->WantCaptureKeyboard) { return; }
+    bool ctrl = ((mods & GLFW_MOD_CONTROL) != 0);
+    switch (key) {
+        case GLFW_KEY_O:
+            if (ctrl) { showLoadUI(); }
+            break;
+        case GLFW_KEY_S:
+            if (ctrl) { showSaveUI(); }
+            break;
+        case GLFW_KEY_C:
+            if (ctrl) { saveResult(nullptr, true); }
+            break;
+        case GLFW_KEY_V:
+            if (ctrl) { loadImage(nullptr, true, true); }
+            break;
+        case GLFW_KEY_Q:
+            if (ctrl) { m_active = false; }
+            break;
+        case GLFW_KEY_F1:
+            m_showDebug = true;
+            break;
+        case GLFW_KEY_F5: {
+            if (ctrl) { updateImage(); }
+            m_pipeline.reload(ctrl);
+            break; }
+        default:
+            break;
+    }
+}
+
+void App::handleMouseButtonEvent(int button, int action, int mods) {
+    (void)mods;
+    if (action == GLFW_RELEASE) {
+        m_panning = false;
+    } else if (!m_io->WantCaptureMouse && ((button == GLFW_MOUSE_BUTTON_LEFT) || (button == GLFW_MOUSE_BUTTON_MIDDLE))) {
+        double xpos, ypos;
+        glfwGetCursorPos(m_window, &xpos, &ypos);
+        panStart(int(xpos + 0.5), int(ypos + 0.5));
+    }
+}
+
+void App::handleCursorPosEvent(double xpos, double ypos) {
+    if (m_panning && ((glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+                  ||  (glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS))) {
+        panUpdate(int(xpos + 0.5), int(ypos + 0.5));
+    }
+}
+
+void App::handleScrollEvent(double xoffset, double yoffset) {
+    (void)xoffset;
+    if (!m_io->WantCaptureMouse) {
+        double x = m_io->DisplaySize.x * 0.5f;
+        double y = m_io->DisplaySize.y * 0.5f;
+        glfwGetCursorPos(m_window, &x, &y);
+        zoomAt(int(x + 0.5), int(y + 0.5), int(yoffset));
+    }
+    m_panning = false;
+}
+
+void App::handleDropEvent(int path_count, const char* paths[]) {
+    for (int i = 0;  i < path_count;  ++i) {
+        handleInputFile(paths[i]);
+    }
+}
+
+#if 0
 bool App::handleEvents(bool wait) {
     SDL_Event ev;
     bool hadEvents = false;
@@ -347,68 +426,10 @@ bool App::handleEvents(bool wait) {
                 m_active = false;
                 break;
             case SDL_KEYUP:
-                if (!m_io->WantCaptureKeyboard) {
-                    bool ctrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
-                    switch (ev.key.keysym.sym) {
-                        case SDLK_o:
-                            if (ctrl) { showLoadUI(); }
-                            break;
-                        case SDLK_s:
-                            if (ctrl) { showSaveUI(); }
-                            break;
-                        case SDLK_c:
-                            if (ctrl) { saveResult(nullptr, true); }
-                            break;
-                        case SDLK_v:
-                            if (ctrl) { loadImage(nullptr, true, true); }
-                            break;
-                        case SDLK_q:
-                            if (ctrl) { m_active = false; }
-                            break;
-                        case SDLK_F1:
-                            m_showDebug = true;
-                            break;
-                        case SDLK_F5: {
-                            if (ctrl) { updateImage(); }
-                            m_pipeline.reload(ctrl);
-                            break; }
-                        default:
-                            break;
-                    }   // END key switch
-                }   // END keyboard capture check
-                break;
-            case SDL_MOUSEBUTTONDOWN:
-                if (!m_io->WantCaptureMouse && ((ev.button.button == SDL_BUTTON_LEFT) || (ev.button.button == SDL_BUTTON_MIDDLE))) {
-                    panStart(ev.button.x, ev.button.y);
-                }
                 break;
             case SDL_MOUSEMOTION:
-                if (m_panning && (ev.motion.state & (SDL_BUTTON_LMASK | SDL_BUTTON_MMASK))) {
-                    panUpdate(ev.motion.x, ev.motion.y);
-                }
                 break;
-            case SDL_MOUSEBUTTONUP:
-                m_panning = false;
-                break;
-            case SDL_MOUSEWHEEL:
-                if (!m_io->WantCaptureMouse) {
-                    int x = int(m_io->DisplaySize.x * 0.5f);
-                    int y = int(m_io->DisplaySize.y * 0.5f);
-                    SDL_GetMouseState(&x, &y);
-                    zoomAt(x, y, ev.wheel.y);
-                }
-                m_panning = false;
-                break;
-            case SDL_DROPFILE:
-                handleInputFile(ev.drop.file);
-                SDL_free(ev.drop.file);
-                break;
-            default:
-                break;
-        }
-    }
-    return hadEvents;
-}
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
