@@ -1,11 +1,12 @@
 // SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
 // SPDX-License-Identifier: MIT
 
-#include <SDL.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 #include "clipboard.h"
 
-void Clipboard::init(SDL_Window* window) {
+void Clipboard::init(GLFWwindow* window) {
     (void)window;
 }
 
