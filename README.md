@@ -140,7 +140,7 @@ GIPS is written by Martin J. Fiedler (<keyj@emphy.de>)
 
 Used third-party software:
 
-- [SDL2](https://www.libsdl.org)
+- [GLFW](https://www.glfw.org/)
   for window and OpenGL context creation and event handling
 - [Dear ImGui](https://github.com/ocornut/imgui)
   for the user interface
