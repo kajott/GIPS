@@ -69,9 +69,9 @@ void* getRGBA8Image(int &width, int &height) {
 
     // load the image as DIB data
     HANDLE hDIB = GetClipboardData(CF_DIB);
-    if (!hDIB) { CloseClipboard(); return false; }
+    if (!hDIB) { CloseClipboard(); return nullptr; }
     const uint8_t* dibData = (const uint8_t*) GlobalLock(hDIB);
-    if (!dibData) { CloseClipboard(); return false; }
+    if (!dibData) { CloseClipboard(); return nullptr; }
     int dibSize = int(GlobalSize(hDIB));
 
     // parse the bitmap header
@@ -148,7 +148,7 @@ void* getRGBA8Image(int &width, int &height) {
     // last-ditch effort: add a BITMAPFILEHEADER and let stb_image have a stab at it
     int fullSize = dibSize + sizeof(BITMAPFILEHEADER);
     uint8_t* fullDIB = (uint8_t*) malloc(fullSize);
-    if (!fullDIB) { GlobalUnlock(hDIB); CloseClipboard(); return false; }
+    if (!fullDIB) { GlobalUnlock(hDIB); CloseClipboard(); return nullptr; }
     fullDIB[0] = 'B';
     fullDIB[1] = 'M';
     BITMAPFILEHEADER* bmfh = (BITMAPFILEHEADER*) fullDIB;
