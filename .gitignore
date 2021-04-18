@@ -5,7 +5,6 @@ gips_debug
 gips_debug.exe
 *.pdb
 *.ilk
-thirdparty/SDL2-*
 gips_ui.ini
 cmake-*
 pandoc-*
