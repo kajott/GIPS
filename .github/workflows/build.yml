@@ -24,6 +24,6 @@ jobs:
       - name: Install Prerequisites
         run: |
           sudo apt -y update
-          sudo apt -y install ninja-build libsdl2-dev
+          sudo apt -y install ninja-build libgl-dev libwayland-dev libx11-dev libxrandr-dev libxinerama-dev libxkbcommon-dev libxcursor-dev libxi-dev
       - name: Linux Build
         run: make release

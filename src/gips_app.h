@@ -8,7 +8,8 @@
 #include <string>
 #include <list>
 
-#include <SDL.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 #include "gl_header.h"
 #include "gl_util.h"
 #include "imgui.h"
@@ -34,9 +35,8 @@ private:
     std::string m_appUIConfigFile;
     std::string m_shaderDir;
 
-    // SDL and ImGui stuff
-    SDL_Window* m_window = nullptr;
-    SDL_GLContext m_glctx = nullptr;
+    // GLFW and ImGui stuff
+    GLFWwindow* m_window = nullptr;
     ImGuiIO* m_io = nullptr;
 
     // UI state
@@ -146,7 +146,11 @@ private:
     int m_autoTestFail = 0;
 
     // event and PCR handling
-    bool handleEvents(bool wait);
+    void handleKeyEvent(int key, int scancode, int action, int mods);
+    void handleMouseButtonEvent(int button, int action, int mods);
+    void handleCursorPosEvent(double xpos, double ypos);
+    void handleScrollEvent(double xoffset, double yoffset);
+    void handleDropEvent(int path_count, const char* paths[]);
     bool handlePCR();
 
     // UI functions (implemented in gips_ui.cpp)

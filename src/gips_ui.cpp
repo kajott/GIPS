@@ -480,9 +480,7 @@ void GIPS::App::drawUI() {
         ImGui::Separator();
         if (m_showDebug) {
             ImGui::TextUnformatted("Library Versions:");
-            SDL_version sdlVer;
-            SDL_GetVersion(&sdlVer);
-            ImGui::Text("- SDL %d.%d.%d", sdlVer.major, sdlVer.minor, sdlVer.patch);
+            ImGui::Text("- GLFW %s", glfwGetVersionString());
             ImGui::Text("- Dear ImGui %s", ImGui::GetVersion());
             ImGui::Separator();
         }

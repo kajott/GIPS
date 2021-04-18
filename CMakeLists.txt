@@ -16,46 +16,16 @@ endif ()
 set (CMAKE_C_STANDARD 99)
 set (CMAKE_CXX_STANDARD 11)
 
-# ensure we have a working SDL2 library; on Win32, bootstrap it ourselves
-if (WIN32)
-    # first, download the sources
-    set (SDL2_VERSION 2.0.14)
-    set (SDL2_DIR "${CMAKE_CURRENT_LIST_DIR}/thirdparty/SDL2-${SDL2_VERSION}")
-    if (NOT EXISTS "${SDL2_DIR}/src")
-        message (STATUS "${SDL2_DIR} does not exist")
-        set (SDL2_ZIPFILE "SDL2-${SDL2_VERSION}.zip")
-        set (SDL2_ARCHIVE "${CMAKE_CURRENT_LIST_DIR}/thirdparty/${SDL2_ZIPFILE}")
-        if (NOT EXISTS "${SDL2_ARCHIVE}")
-            message (STATUS "downloading SDL sources ...")
-            file (DOWNLOAD "http://www.libsdl.org/release/${SDL2_ZIPFILE}" "${SDL2_ARCHIVE}")
-        endif ()
-        message (STATUS "unpacking SDL sources ...")
-        execute_process (COMMAND powershell Expand-Archive "${SDL2_ARCHIVE}" -DestinationPath "${CMAKE_CURRENT_LIST_DIR}/thirdparty")
-    endif ()
-    # set options for a minimal static SDL2 build
-    foreach (disable_
-        SDL_AUDIO SDL_RENDER DIRECTX RENDER_D3D WASAPI
-        SDL_ATOMIC SDL_CPUINFO SDL_FILE SDL_FILESYSTEM SDL_POWER SDL_LOCALE
-        SDL_HAPTIC SDL_SENSOR
-        ASSEMBLY MMX 3DNOW SSE SSE2 SSE3 SSEMATH
-        VIDEO_OPENGLES VIDEO_VULKAN
-        VIDEO_DUMMY DUMMYAUDIO DISKAUDIO
-    )
-        option ("${disable_}" OFF)
-    endforeach ()
-    set (SDL_SHARED OFF CACHE BOOL "" FORCE)
-    set (SDL_STATIC ON  CACHE BOOL "" FORCE)
-    # include SDL build directory and publish the required settings
-    message (STATUS "v v v v v v v v v v v SDL2 configure messages begin here v v v v v v v v v v")
-    add_subdirectory (${SDL2_DIR})
-    message (STATUS "^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ SDL2 configure messages end here ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^")
-    set (SDL2_INCLUDE_DIRS "${SDL2_DIR}/include")
-    set (SDL2_LIBRARIES SDL2-static SDL2main)
-else ()
-    # on systems that tend to have proper package managers,
-    # we can just use the system's default SDL2 installation
-    find_package (SDL2 REQUIRED)
+# use the static C library with MSVC builds
+if (MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif ()
+
+# add the GLFW library with suitable options
+foreach (disable_ GLFW_BUILD_EXAMPLES GLFW_BUILD_TESTS GLFW_BUILD_DOCS GLFW_INSTALL)
+    option ("${disable_}" OFF)
+endforeach ()
+add_subdirectory (thirdparty/glfw)
 
 # set sources for main program and third-party libs
 add_executable (gips
@@ -77,7 +47,7 @@ add_library (gips_thirdparty STATIC
     thirdparty/imgui/imgui_widgets.cpp
     thirdparty/imgui/imgui_tables.cpp
     thirdparty/imgui/imgui_draw.cpp
-    thirdparty/imgui/backends/imgui_impl_sdl.cpp
+    thirdparty/imgui/backends/imgui_impl_glfw.cpp
     thirdparty/imgui/backends/imgui_impl_opengl3.cpp
     src/libs_c.c
     src/libs_cpp.cpp
@@ -86,7 +56,6 @@ add_library (gips_thirdparty STATIC
 # set include directories
 target_include_directories (gips_thirdparty PUBLIC
     src
-    ${SDL2_INCLUDE_DIRS}
     thirdparty/glad/include
     thirdparty/imgui
     thirdparty/imgui/backends
@@ -96,7 +65,8 @@ target_include_directories (gips_thirdparty PUBLIC
 target_include_directories (gips PRIVATE src)
 
 # set library dependencies
-target_link_libraries (gips gips_thirdparty ${SDL2_LIBRARIES})
+target_link_libraries (gips_thirdparty glfw)
+target_link_libraries (gips gips_thirdparty glfw)
 if (WIN32)
     target_link_libraries (gips opengl32)
 else ()

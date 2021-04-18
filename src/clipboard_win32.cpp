@@ -12,8 +12,10 @@
 
 #include <algorithm>
 
-#include <SDL.h>
-#include <SDL_syswm.h>
+#define GLFW_INCLUDE_NONE
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 
 #include "stb_image.h"
 
@@ -25,12 +27,8 @@ namespace Clipboard {
 
 HWND hWnd = 0;
 
-void init(SDL_Window* window) {
-    SDL_SysWMinfo info;
-    SDL_VERSION(&info.version);
-    if (SDL_GetWindowWMInfo(window, &info)) {
-        hWnd = info.info.win.window;
-    }
+void init(GLFWwindow* window) {
+    hWnd = glfwGetWin32Window(window);
 }
 
 bool isAvailable() {
@@ -71,9 +69,9 @@ void* getRGBA8Image(int &width, int &height) {
 
     // load the image as DIB data
     HANDLE hDIB = GetClipboardData(CF_DIB);
-    if (!hDIB) { CloseClipboard(); return false; }
+    if (!hDIB) { CloseClipboard(); return nullptr; }
     const uint8_t* dibData = (const uint8_t*) GlobalLock(hDIB);
-    if (!dibData) { CloseClipboard(); return false; }
+    if (!dibData) { CloseClipboard(); return nullptr; }
     int dibSize = int(GlobalSize(hDIB));
 
     // parse the bitmap header
@@ -150,7 +148,7 @@ void* getRGBA8Image(int &width, int &height) {
     // last-ditch effort: add a BITMAPFILEHEADER and let stb_image have a stab at it
     int fullSize = dibSize + sizeof(BITMAPFILEHEADER);
     uint8_t* fullDIB = (uint8_t*) malloc(fullSize);
-    if (!fullDIB) { GlobalUnlock(hDIB); CloseClipboard(); return false; }
+    if (!fullDIB) { GlobalUnlock(hDIB); CloseClipboard(); return nullptr; }
     fullDIB[0] = 'B';
     fullDIB[1] = 'M';
     BITMAPFILEHEADER* bmfh = (BITMAPFILEHEADER*) fullDIB;

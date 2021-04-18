@@ -7,3 +7,6 @@
 [submodule "thirdparty/pfd"]
 	path = thirdparty/pfd
 	url = https://github.com/samhocevar/portable-file-dialogs
+[submodule "thirdparty/glfw"]
+	path = thirdparty/glfw
+	url = https://github.com/glfw/glfw

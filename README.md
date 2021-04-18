@@ -88,20 +88,18 @@ GIPS is written in C++11 and uses the CMake build system.
 
 ### Linux
 
-Make sure that a compiler (GCC or Clang), CMake,
-and the SDL2 development libraries are installed;
-Ninja is also highly recommended.
+Make sure that a compiler (GCC or Clang), CMake, Ninja,
+and the X11 and OpenGL development libraries are installed;
 At runtime, the `zenity` program must be available
 in order to make the save/load dialogs work.
 
 For example, on Debian/Ubuntu systems,
 this should install everything that's needed:
 
-    sudo apt install build-essential cmake libsdl2-dev ninja-build zenity
+    sudo apt install build-essential cmake ninja-build libgl-dev libwayland-dev libx11-dev libxrandr-dev libxinerama-dev libxkbcommon-dev libxcursor-dev libxi-dev zenity
 
 After that, you can just run `make release`;
 it creates a `_build` directory, runs CMake and finally Ninja.
-
 The executable (`gips`) will be placed in the source directory,
 *not* in the build directory.
 
@@ -122,11 +120,10 @@ and everything else should happen automatically:
   is downloaded and used)
 - a local copy of CMake is downloaded if there's no system-wide CMake installation
 - a copy of [Ninja](https://ninja-build.org) is downloaded and used
-- the SDL2 source code is downloaded
 - CMake and Ninja are called
 
 At the end of this process, a freshly-built `gips.exe` should have appeared
-in the source directory. Since SDL2 is used as a static library,
+in the source directory. Since GLFW is used as a static library,
 it should not require any non-standard DLLs.
 
 Using CMake directly, generating projects for Visual Studio is also possible,
@@ -140,7 +137,7 @@ GIPS is written by Martin J. Fiedler (<keyj@emphy.de>)
 
 Used third-party software:
 
-- [SDL2](https://www.libsdl.org)
+- [GLFW](https://www.glfw.org/)
   for window and OpenGL context creation and event handling
 - [Dear ImGui](https://github.com/ocornut/imgui)
   for the user interface
