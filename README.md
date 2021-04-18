@@ -96,7 +96,7 @@ in order to make the save/load dialogs work.
 For example, on Debian/Ubuntu systems,
 this should install everything that's needed:
 
-    sudo apt install build-essential cmake ninja-build libgl-dev libwayland-dev libx11-dev libxrandr-dev zenity
+    sudo apt install build-essential cmake ninja-build libgl-dev libwayland-dev libx11-dev libxrandr-dev libxinerama-dev libxkbcommon-dev libxcursor-dev libxi-dev zenity
 
 After that, you can just run `make release`;
 it creates a `_build` directory, runs CMake and finally Ninja.
