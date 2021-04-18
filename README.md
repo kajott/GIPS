@@ -82,7 +82,7 @@ Currently, GIPS is in "Minimum Viable Prototype" state; this means:
 ## Building
 
 First, ensure you have all the submodules checked out
-(use `git clone --recursive` or `git submodule init --update`).
+(use `git clone --recursive` or `git submodule update --init`).
 
 GIPS is written in C++11 and uses the CMake build system.
 
