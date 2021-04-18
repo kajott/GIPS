@@ -88,20 +88,18 @@ GIPS is written in C++11 and uses the CMake build system.
 
 ### Linux
 
-Make sure that a compiler (GCC or Clang), CMake,
-and the X11 development libraries are installed;
-Ninja is also highly recommended.
+Make sure that a compiler (GCC or Clang), CMake, Ninja,
+and the X11 and OpenGL development libraries are installed;
 At runtime, the `zenity` program must be available
 in order to make the save/load dialogs work.
 
 For example, on Debian/Ubuntu systems,
 this should install everything that's needed:
 
-    sudo apt install build-essential cmake libglfw3-dev ninja-build zenity
+    sudo apt install build-essential cmake ninja-build libgl-dev libwayland-dev libx11-dev libxrandr-dev zenity
 
 After that, you can just run `make release`;
 it creates a `_build` directory, runs CMake and finally Ninja.
-
 The executable (`gips`) will be placed in the source directory,
 *not* in the build directory.
 
