@@ -16,6 +16,11 @@ endif ()
 set (CMAKE_C_STANDARD 99)
 set (CMAKE_CXX_STANDARD 11)
 
+# use the static C library with MSVC builds
+if (MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif ()
+
 # add the GLFW library with suitable options
 foreach (disable_ GLFW_BUILD_EXAMPLES GLFW_BUILD_TESTS GLFW_BUILD_DOCS GLFW_INSTALL)
     option ("${disable_}" OFF)
