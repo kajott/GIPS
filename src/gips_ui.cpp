@@ -8,7 +8,7 @@
 #include "libs.h"  // includes wrappers for pfd functions
 
 #include "string_util.h"
-#include "dirlist.h"
+#include "vfs.h"
 #include "clipboard.h"
 #include "patterns.h"
 
@@ -73,11 +73,11 @@ struct ButtonColorOverride {
 ///////////////////////////////////////////////////////////////////////////////
 
 static void ShaderBrowserMenu(GIPS::App& app, int nodeIndex, const char* dir) {
-    const DirList& list = getCachedDirList(dir);
+    const auto& list = VFS::getCachedDirList(dir);
     for (const auto& item : list.items) {
         if (item.isDir) {
             if (ImGui::BeginMenu(item.nameNoExt.c_str())) {
-                ShaderBrowserMenu(app, nodeIndex, item.fullPath.c_str());
+                ShaderBrowserMenu(app, nodeIndex, item.relPath.c_str());
                 ImGui::EndMenu();
             }
         } else if (app.isShaderFile(item.fullPath.c_str())) {
@@ -96,7 +96,7 @@ static bool TreeNodeForGIPSNode(GIPS::App& app, int nodeIndex=0, GIPS::Node* nod
     // add context menu
     if (node && ImGui::BeginPopupContextItem("node context menu popup")) {
         if (ImGui::BeginMenu("insert")) {
-            ShaderBrowserMenu(app, nodeIndex, app.getShaderDir());
+            ShaderBrowserMenu(app, nodeIndex, "");
             ImGui::EndMenu();
         }
 
@@ -451,7 +451,7 @@ void GIPS::App::drawUI() {
             ImGui::OpenPopup("add_filter");
         }
         if (ImGui::BeginPopup("add_filter")) {
-            ShaderBrowserMenu(*this, 0, getShaderDir());
+            ShaderBrowserMenu(*this, 0, "");
             ImGui::EndPopup();
         }
     }   // END main window

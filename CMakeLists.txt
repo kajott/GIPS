@@ -36,7 +36,7 @@ add_executable (gips
     src/gips_shader_loader.cpp
     src/gl_util.cpp
     src/string_util.cpp
-    src/dirlist.cpp
+    src/vfs.cpp
     src/patterns.cpp
     src/git_rev.c
 )

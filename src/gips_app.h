@@ -33,7 +33,6 @@ private:
     // paths
     std::string m_appDir;
     std::string m_appUIConfigFile;
-    std::string m_shaderDir;
 
     // GLFW and ImGui stuff
     GLFWwindow* m_window = nullptr;
@@ -189,8 +188,6 @@ public:
         m_showIndex = (i < 0) ? 0 : (i > m_pipeline.nodeCount()) ? m_pipeline.nodeCount() : i;
         return m_showIndex;
     }
-
-    inline const char* getShaderDir() const { return m_shaderDir.c_str(); }
 
     inline int getNodeCount() const { return m_pipeline.nodeCount() + 1; }
     inline Node* getNode(int idx) { return ((idx > 0) && (idx <= m_pipeline.nodeCount())) ? &m_pipeline.node(idx - 1) : nullptr; }

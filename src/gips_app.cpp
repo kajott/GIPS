@@ -24,6 +24,7 @@
 
 #include "string_util.h"
 #include "file_util.h"
+#include "vfs.h"
 #include "clipboard.h"
 
 #include "patterns.h"
@@ -92,7 +93,7 @@ int App::run(int argc, char *argv[]) {
         fprintf(stderr, "application directory: '%s'\n", m_appDir.c_str());
     #endif
     m_appUIConfigFile = m_appDir + StringUtil::defaultPathSep + "gips_ui.ini";
-    m_shaderDir = m_appDir + StringUtil::defaultPathSep + "shaders";
+    VFS::addRoot(m_appDir + StringUtil::defaultPathSep + "shaders");
 
     if (!glfwInit()) {
         const char* err = "unknown error";
@@ -823,7 +824,10 @@ void App::startAutoTest(const char* scanDir) {
         // main entry point
         m_autoTestList.clear();
         m_autoTestTotal = m_autoTestDone = m_autoTestOK = m_autoTestWarn = m_autoTestFail = 0;
-        startAutoTest(m_shaderDir.c_str());
+        int nroots = VFS::getRootCount();
+        for (int i = 0;  i < nroots;  ++i) {
+            startAutoTest(VFS::getRoot(i));
+        }
         #ifndef NDEBUG
             fprintf(stderr, "[AutoTest] starting, %d shaders queued\n", m_autoTestTotal);
         #endif

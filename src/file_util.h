@@ -53,6 +53,8 @@ public:
     inline bool good() const { return m_size || m_mtime; }
     inline bool operator== (const FileFingerprint& other) const
         { return m_size && m_mtime && (m_size == other.m_size) && (m_mtime == other.m_mtime); }
+    inline bool newerThan(const FileFingerprint& other) const
+        { return (m_mtime > other.m_mtime); }
     inline FileFingerprint& operator= (const char* path) { update(path); return *this; }
 
     bool update(const char* path);
