@@ -76,7 +76,7 @@ void* getRGBA8Image(int &width, int &height) {
 
     // parse the bitmap header
     BITMAPINFOHEADER* bmih = (BITMAPINFOHEADER*) dibData;
-    bool headerOK = (dibSize >= sizeof(BITMAPINFOHEADER))
+    bool headerOK = (dibSize >= int(sizeof(BITMAPINFOHEADER)))
                  && (int(bmih->biSize) < dibSize)
                  && (bmih->biPlanes == 1)
                  && ( ( // format 1: classic BI_RGB, 24 or 32 bits BGR(A)
