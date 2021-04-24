@@ -22,6 +22,7 @@
 #include "stb_image_write.h"
 #include "stb_image_resize.h"
 
+#include "sysinfo.h"
 #include "string_util.h"
 #include "file_util.h"
 #include "vfs.h"
@@ -80,6 +81,7 @@ int App::run(int argc, char *argv[]) {
         } else {
             fprintf(stderr, "%s (git %s %s)\n", GIPS_VERSION, git_branch, git_rev);
         }
+        fprintf(stderr, "%s / %s / %s / %d-bit\n", SysInfo::getPlatformID(), SysInfo::getSystemID(), SysInfo::getCompilerID(), SysInfo::getBitness());
     #endif
 
     // get app's base directory

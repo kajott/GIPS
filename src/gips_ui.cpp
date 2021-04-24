@@ -7,6 +7,7 @@
 
 #include "libs.h"  // includes wrappers for pfd functions
 
+#include "sysinfo.h"
 #include "string_util.h"
 #include "vfs.h"
 #include "clipboard.h"
@@ -479,6 +480,9 @@ void GIPS::App::drawUI() {
         ImGui::TextUnformatted("(C) 2021 Martin J. Fiedler");
         ImGui::Separator();
         if (m_showDebug) {
+            ImGui::Text("Platform: %s on %s", SysInfo::getSystemID(), SysInfo::getPlatformID());
+            ImGui::Text("Compiler: %s (%d-bit)", SysInfo::getCompilerID(), SysInfo::getBitness());
+            ImGui::Separator();
             ImGui::TextUnformatted("Library Versions:");
             ImGui::Text("- GLFW %s", glfwGetVersionString());
             ImGui::Text("- Dear ImGui %s", ImGui::GetVersion());

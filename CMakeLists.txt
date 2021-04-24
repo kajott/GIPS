@@ -40,6 +40,7 @@ add_executable (gips
     src/vfs.cpp
     src/patterns.cpp
     src/git_rev.c
+    src/sysinfo.cpp
 )
 add_library (gips_thirdparty STATIC
     thirdparty/glad/src/glad.c
