@@ -155,7 +155,7 @@ bool Shader::compile(const char* src) {
     if (logLen > logAlloc) {
         ::free(log);
         logAlloc = logLen + 128;
-        log = (char*) malloc(logAlloc);
+        log = static_cast<char*>(malloc(size_t(logAlloc)));
         if (!log) { logAlloc = 0; }
     }
     if (logLen && log) {
@@ -209,7 +209,7 @@ bool Program::link(GLuint vs, GLuint fs) {
     if (logLen > logAlloc) {
         ::free(log);
         logAlloc = logLen + 128;
-        log = (char*) malloc(logAlloc);
+        log = static_cast<char*>(malloc(size_t(logAlloc)));
         if (!log) { logAlloc = 0; }
     }
     if (logLen && log) {

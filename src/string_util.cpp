@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
 // SPDX-License-Identifier: MIT
 
-#define _CRT_SECURE_NO_WARNINGS  // prevent MSVC warnings
+#ifdef _MSC_VER
+    #define _CRT_SECURE_NO_WARNINGS  // prevent MSVC warnings
+#endif
 
 #include <cstdio>
 #include <cstdlib>
@@ -64,9 +66,9 @@ bool Tokenizer::extendUntil(const char* pattern, bool untilEndIfNotFound) {
 char* Tokenizer::extractToken() const {
     int len = m_pos - m_start;
     if (!m_str || (len < 0)) { return nullptr; }
-    char* t = (char*) malloc(len + 1);
+    char* t = static_cast<char*>(malloc(size_t(len + 1)));
     if (!t) { return nullptr; }
-    memcpy(t, &m_str[m_start], len);
+    memcpy(t, &m_str[m_start], size_t(len));
     t[len] = '\0';
     return t;
 }
@@ -95,7 +97,7 @@ int stringLengthWithoutTrailingWhitespace(const char *s) {
 
 char* copy(const char* str, int extraChars) {
     if (!str) { return nullptr; }
-    char *res = (char*) malloc(int(strlen(str)) + extraChars + 1);
+    char *res = static_cast<char*>(malloc(strlen(str) + size_t(extraChars) + 1u));
     if (!res) { return nullptr; }
     strcpy(res, str);
     return res;
@@ -143,7 +145,7 @@ char* pathJoin(const char* a, const char* b) {
     if (!path) { return nullptr; }
 
     // Win32 special case: B might be a drive-relative path
-    #if _WIN32
+    #ifdef _WIN32
         if (ispathsep(b[0]) && !ispathsep(b[1])) {
             if (isalpha(a[0]) && (a[1] == ':')) {
                 // A starts with a drive letter -> fine, join the paths

@@ -100,6 +100,12 @@ if (NOT MSVC)
 else ()
     target_compile_options (gips PRIVATE /W4 /WX)
 endif ()
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # the following option is useful for code quality testing only;
+    # due to -Werror, no functional builds will be produced, as there are
+    # *always* some warnings in third-party headers
+#    target_compile_options (gips PRIVATE -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded)
+endif ()
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     if (NOT MSVC)
         message (STATUS "Debug build, enabling Address Sanitizer")

@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
 // SPDX-License-Identifier: MIT
 
-#define _CRT_SECURE_NO_WARNINGS  // prevent MSVC warnings
+#ifdef _MSC_VER
+    #define _CRT_SECURE_NO_WARNINGS  // prevent MSVC warnings
+#endif
 
 #include <cstdio>
 #include <cstdlib>
@@ -107,7 +109,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
     m_filename = filename;
     {
         const char *basename = StringUtil::pathBaseName(filename);
-        m_name = std::string(basename, StringUtil::pathExtStartIndex(basename));
+        m_name = std::string(basename, size_t(StringUtil::pathExtStartIndex(basename)));
     }
     m_preferredFormat = PixelFormat::DontCare;
 
@@ -120,7 +122,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
     fseek(f, 0, SEEK_END);
     fsize = size_t(ftell(f));
     fseek(f, 0, SEEK_SET);
-    code = (char*) malloc(fsize + 1);
+    code = static_cast<char*>(malloc(fsize + 1));
     if (!code) {
         err << "(GIPS) out of memory while loading the input file\n";
         goto load_finalize;
@@ -287,7 +289,7 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
             if ((tt[1] == GLSLToken::Float) || (tt[1] == GLSLToken::Vec2) || (tt[1] == GLSLToken::Vec3) || (tt[1] == GLSLToken::Vec4)) {
                 newParams.emplace_back();
                 param = &newParams.back();
-                param->m_name = std::string(tok.stringFromStart(), tok.length());
+                param->m_name = std::string(tok.stringFromStart(), size_t(tok.length()));
                 // set a default parameter type based on the data type
                 paramDataType = tt[1];
                 switch (paramDataType) {
@@ -444,10 +446,10 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
         shader << "run";
         if (currentPass || !singlePass) { shader << "_pass" << (currentPass + 1); }
         switch (input) {
-            case PassInput::Coord: shader << "(gips_pos)"; break;
+            case PassInput::Coord: shader << "(gips_pos)";  break;
             case PassInput::RGB:   shader << "(color.rgb)"; break;
-            case PassInput::RGBA:  shader << "(color)"; break;
-            default: assert(0);
+            case PassInput::RGBA:  shader << "(color)";     break;
+            // do default; all enumerants are expected to be covered
         }
         if (output == PassOutput::RGB) {
             if (input == PassInput::Coord) {

@@ -116,8 +116,8 @@ public:
     inline       int        passCount()  const { return m_passCount; }
     inline       bool       enabled()    const { return m_enabled; }
     inline       int        paramCount() const { return int(m_params.size()); }
-    inline const Parameter& param(int i) const { return m_params[i]; }
-    inline       Parameter& param(int i)       { return m_params[i]; }
+    inline const Parameter& param(int i) const { return m_params[size_t(i)]; }
+    inline       Parameter& param(int i)       { return m_params[size_t(i)]; }
 
     inline void setEnabled(bool e) { m_enabled = e; }
     inline void enable()           { m_enabled = true; }
@@ -154,8 +154,8 @@ public:
     inline       PixelFormat     format()    const { return m_format; }
     inline       float lastRenderTime_ms()   const { return m_lastRenderTime_ms; }
     inline       int             nodeCount() const { return int(m_nodes.size()); }
-    inline const Node&           node(int i) const { return *m_nodes[i]; }
-    inline       Node&           node(int i)       { return *m_nodes[i]; }
+    inline const Node&           node(int i) const { return *m_nodes[size_t(i)]; }
+    inline       Node&           node(int i)       { return *m_nodes[size_t(i)]; }
     Node* addNode(int index=-1);
     inline Node* addNode(const char* filename, int index=-1) {
         Node* n = addNode(index);

@@ -32,7 +32,7 @@ public:
         return from + int(getU32() % uint32_t(to - from + 1));
     }
     inline float getF() {
-        return getU32() * (1.0f / 4294967296.f);
+        return float(getU32()) * (1.0f / 4294967296.f);
     }
     inline float getRange(float from, float to) {
         return from + (to - from) * getF();
@@ -141,11 +141,12 @@ const PatternDefinition Patterns[] = {
             const auto addNoise = [this,n](uint8_t c) -> uint8_t {
                 return uint8_t(r.getRange(std::max(1, int(c) - n), std::min(255, int(c) + n)));
             };
-            #define genpix(a,var,b,u,v) \
+            #define genpix(a,var,b,u,v) do { \
                 var = pixel(p, u, v); \
                 if (!var) { \
                     var = pixel(p, u, v) = addNoise(uint8_t((uint16_t(a) + uint16_t(b)) >> 1)); \
-                }
+                } \
+            } while (0)
             uint8_t c10 = 0, c12 = 0, c01 = 0, c21 = 0;
             if (x > 0) {
                 genpix(c00, c10, c20, x, 0);
@@ -170,7 +171,7 @@ const PatternDefinition Patterns[] = {
         inline explicit Recursion(int s) : r(42), stride(s) {}
     };
 
-    memset(data, 0, width * height * 4);
+    memset(data, 0, size_t(width * height * 4));
 
     Recursion r(width);
     for (int c = (alpha ? 4 : 3);  c;  --c) {
@@ -198,7 +199,7 @@ const PatternDefinition Patterns[] = {
     PRNG r(uint32_t(width * height) ^ uint32_t(width - height));
     int cx = r.getRange(-width,  2*width);
     int cy = r.getRange(-height, 2*height);
-    float scale = 1.0f / std::min(width, height);
+    float scale = 1.0f / float(std::min(width, height));
 
     struct Linear {
         float fx, fy, phase;
@@ -206,7 +207,7 @@ const PatternDefinition Patterns[] = {
             fx = r.getRange(-10.0f * scale, 10.0f * scale);
             fy = r.getRange(-10.0f * scale, 10.0f * scale);
             phase = r.getF() * 6.28f;
-        };
+        }
         inline float operator() (float x, float y) {
             return std::sin(x * fx + y * fy + phase);
         }
@@ -218,7 +219,7 @@ const PatternDefinition Patterns[] = {
             scale *= scale;
             fx = r.getRange(10.0f * scale, 100.0f * scale);
             fy = r.getRange(10.0f * scale, 100.0f * scale);
-        };
+        }
         inline float operator() (float x, float y) {
             return std::cos(std::sqrt(x*x*fx + y*y*fy));
         }
@@ -248,18 +249,18 @@ const PatternDefinition Patterns[] = {
     float cAmp = r.getRange(3.0f, 5.0f);
     float cPhase = r.getF() * 6.28f;
     for (int iy = height;  iy;  --iy) {
-        float y = scale * (iy - cy);
+        float y = scale * float(iy - cy);
         for (int ix = width;  ix;  --ix) {
-            float x = scale * (ix - cx);
+            float x = scale * float(ix - cx);
             float f = o3(x,y);
             f += o2(x,y) + std::sin(f * o2mod);
             f += o1(x,y) + std::sin(f * o1mod);
             f *= cAmp;
-            *data++ = uint8_t(128.0 + 127.9 * std::sin(f + cPhase));
-            *data++ = uint8_t(128.0 + 127.9 * std::sin(f + cPhase + 2.1f));
-            *data++ = uint8_t(128.0 + 127.9 * std::sin(f + cPhase + 4.2f));
+            *data++ = uint8_t(128.0f + 127.9f * std::sin(f + cPhase));
+            *data++ = uint8_t(128.0f + 127.9f * std::sin(f + cPhase + 2.1f));
+            *data++ = uint8_t(128.0f + 127.9f * std::sin(f + cPhase + 4.2f));
             *data++ = !alpha ? 255
-                    : uint8_t(128.0 + 127.9 * std::sin(f + cPhase + 3.1f));
+                    : uint8_t(128.0f + 127.9f * std::sin(f + cPhase + 3.1f));
         }
     }
 }},

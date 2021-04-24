@@ -38,11 +38,11 @@ int getBytesPerPixel(PixelFormat fmt) {
 
 const char* pixelFormatName(PixelFormat fmt) {
     switch (fmt) {
-        case PixelFormat::DontCare: return "don't care"; break;
-        case PixelFormat::Int16:    return "16-bit integer"; break;
-        case PixelFormat::Float16:  return "16-bit floating point"; break;
-        case PixelFormat::Float32:  return "32-bit floating point"; break;
-        default:                    return "8-bit integer"; break;
+        case PixelFormat::DontCare: return "don't care";
+        case PixelFormat::Int16:    return "16-bit integer";
+        case PixelFormat::Float16:  return "16-bit floating point";
+        case PixelFormat::Float32:  return "32-bit floating point";
+        default:                    return "8-bit integer";
     }
 }
 
@@ -135,9 +135,9 @@ Node* Pipeline::addNode(int index) {
     int lastIndex = int(m_nodes.size() - 1);
     if ((index < 0) || (index > lastIndex)) { index = lastIndex; }
     for (int i = lastIndex;  i > index;  --i) {
-        m_nodes[i] = m_nodes[i-1];
+        m_nodes[size_t(i)] = m_nodes[size_t(i-1)];
     }
-    m_nodes[index] = n;
+    m_nodes[size_t(index)] = n;
     m_pipelineChanged = true;
     return n;
 }
@@ -145,9 +145,9 @@ Node* Pipeline::addNode(int index) {
 void Pipeline::removeNode(int index) {
     int lastIndex = int(m_nodes.size() - 1);
     if ((index < 0) || (index > lastIndex)) { return; }
-    delete m_nodes[index];
+    delete m_nodes[size_t(index)];
     for (;  index < lastIndex;  ++index) {
-        m_nodes[index] = m_nodes[index+1];
+        m_nodes[size_t(index)] = m_nodes[size_t(index+1)];
     }
     m_nodes.pop_back();
     m_pipelineChanged = true;
@@ -158,10 +158,10 @@ void Pipeline::moveNode(int fromIndex, int toIndex) {
     if ((fromIndex < 0) || (fromIndex > lastIndex)
     ||  (toIndex < 0)   ||   (toIndex > lastIndex)
     ||  (fromIndex == toIndex)) { return; }
-    Node *n = m_nodes[fromIndex];
-    while (fromIndex < toIndex) { m_nodes[fromIndex] = m_nodes[fromIndex + 1]; ++fromIndex; }
-    while (fromIndex > toIndex) { m_nodes[fromIndex] = m_nodes[fromIndex - 1]; --fromIndex; }
-    m_nodes[toIndex] = n;
+    Node *n = m_nodes[size_t(fromIndex)];
+    while (fromIndex < toIndex) { m_nodes[size_t(fromIndex)] = m_nodes[size_t(fromIndex + 1)]; ++fromIndex; }
+    while (fromIndex > toIndex) { m_nodes[size_t(fromIndex)] = m_nodes[size_t(fromIndex - 1)]; --fromIndex; }
+    m_nodes[size_t(toIndex)] = n;
     m_pipelineChanged = true;
 }
 
@@ -230,7 +230,7 @@ void Pipeline::render(GLuint srcTex, int width, int height, PixelFormat format, 
         #endif
         for (int i = 0;  i < 2;  ++i) {
             glBindTexture(GL_TEXTURE_2D, m_tex[i]);
-            GLenum glfmt, dtype;
+            GLint glfmt; GLenum dtype;
             switch (format) {
                 case PixelFormat::Int16:   glfmt = GL_RGBA16;  dtype = GL_UNSIGNED_SHORT; break;
                 case PixelFormat::Float16: glfmt = GL_RGBA16F; dtype = GL_FLOAT;          break;
@@ -254,7 +254,7 @@ void Pipeline::render(GLuint srcTex, int width, int height, PixelFormat format, 
     // iterate over the nodes and passes
     m_resultTex = srcTex;
     for (int nodeIndex = 0;  nodeIndex < maxNodes;  ++nodeIndex) {
-        const auto& node = *m_nodes[nodeIndex];
+        const auto& node = *m_nodes[size_t(nodeIndex)];
         if (!node.enabled()) { continue; }
         for (int passIndex = 0;  passIndex < node.passCount();  ++passIndex) {
             const auto& pass = node.m_passes[passIndex];
@@ -302,7 +302,7 @@ void Pipeline::render(GLuint srcTex, int width, int height, PixelFormat format, 
 
             // set up parameters
             for (int paramIndex = 0;  paramIndex < node.paramCount();  ++paramIndex) {
-                const auto& param = node.m_params[paramIndex];
+                const auto& param = node.m_params[size_t(paramIndex)];
                 GLint loc = param.m_location[passIndex];
                 switch (param.m_type) {
                     case ParameterType::Value:
@@ -321,8 +321,7 @@ void Pipeline::render(GLuint srcTex, int width, int height, PixelFormat format, 
                     case ParameterType::RGBA:
                         glUniform4fv(loc, 1, param.m_value);
                         break;
-                    default:
-                        break;
+                    // no default here; all enumerants are supposed to be handled
                 }
             }
             GLutil::checkError("uniform setup");

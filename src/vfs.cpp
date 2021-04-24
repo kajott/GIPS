@@ -35,7 +35,7 @@ int getRootCount() {
 }
 
 const char* getRoot(int index) {
-    return ((index >= 0) && (index < int(roots.size()))) ? roots[index].c_str() : nullptr;
+    return ((index >= 0) && (index < int(roots.size()))) ? roots[size_t(index)].c_str() : nullptr;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -90,7 +90,7 @@ DirList::Item::Item(const char* rootDir, const char* relDir, const char* name, b
     ::free(fp);
     ::free(rp);
     int dot = StringUtil::pathExtStartIndex(name);
-    nameNoExt = std::string(name, dot);
+    nameNoExt = std::string(name, size_t(dot));
     isDir = isDir_;
 }
 
