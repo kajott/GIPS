@@ -169,6 +169,28 @@ char* pathJoin(const char* a, const char* b) {
     return path;
 }
 
+bool pathContains(const char* path, const char* comp) {
+    if (!path || !comp || !comp[0]) { return false; }
+    const char *pC = comp;
+    bool match = true;
+    for (const char *pP = path;  *pP;  ++pP) {
+        if (ispathsep(*pP)) {
+            if (!*pC && match) { 
+                                 return true; }
+            pC = comp;
+            match = true;
+        } else if (match) {
+            #ifdef _WIN32
+                match = (tolower(*pP) == tolower(*pC));
+                ++pC;
+            #else
+                match = (*pP == *pC++);
+            #endif
+        }
+    }
+    return false;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 }  // namespace StringUtil

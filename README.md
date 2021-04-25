@@ -34,7 +34,10 @@ Here are some specific hints for the non-obvious things:
 - Use drag & drop from a file manager to load an image into GIPS.
 - The filters / shaders that are visible in the "Add Filter" menu
   are taken from the `shaders` subdirectory of the directory
-  where the `gips`(`.exe`) executable is located.
+  where the `gips`(`.exe`) executable is located, plus
+  `%AppData%\GIPS\shaders` on Windows, or `~/.config/gips/shaders`,
+  `~/.local/share/gips/shaders`, `/usr/share/gips/shaders` and
+  `/usr/local/share/gips/shaders` on Linux.
   - Shader files must have one of the extensions `.glsl`, `.frag` or `.fs`
     to be recognized.
   - New shaders can be put there any time, they will appear immediately

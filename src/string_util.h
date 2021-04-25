@@ -151,6 +151,9 @@ inline void pathRemoveExt(char* path) {
     if (path) { path[pathExtStartIndex(path)] = '\0'; }
 }
 
+//! check whether a path contains a certain component
+bool pathContains(const char* path, const char* comp);
+
 //! return the extension from a file name (including the dot),
 //! or an empty string if there is no file extension
 inline const char* pathExt(const char* path) {

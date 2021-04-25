@@ -84,18 +84,7 @@ int App::run(int argc, char *argv[]) {
         fprintf(stderr, "%s / %s / %s / %d-bit\n", SysInfo::getPlatformID(), SysInfo::getSystemID(), SysInfo::getCompilerID(), SysInfo::getBitness());
     #endif
 
-    // get app's base directory
-    char* cwd = FileUtil::getCurrentDirectory();
-    char *me = StringUtil::pathJoin(cwd, argv[0]);
-    ::free(cwd);
-    StringUtil::pathRemoveBaseName(me);
-    m_appDir = me;
-    ::free(me);
-    #ifndef NDEBUG
-        fprintf(stderr, "application directory: '%s'\n", m_appDir.c_str());
-    #endif
-    m_appUIConfigFile = m_appDir + StringUtil::defaultPathSep + "gips_ui.ini";
-    VFS::addRoot(m_appDir + StringUtil::defaultPathSep + "shaders");
+    setPaths(argv[0]);
 
     if (!glfwInit()) {
         const char* err = "unknown error";

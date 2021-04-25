@@ -144,6 +144,9 @@ private:
     int m_autoTestWarn = 0;
     int m_autoTestFail = 0;
 
+    // initialization
+    void setPaths(const char* argv0);
+
     // event and PCR handling
     void handleKeyEvent(int key, int scancode, int action, int mods);
     void handleMouseButtonEvent(int button, int action, int mods);

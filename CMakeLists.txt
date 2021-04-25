@@ -33,6 +33,7 @@ add_executable (gips
     src/main.cpp
     src/gips_app.cpp
     src/gips_ui.cpp
+    src/gips_paths.cpp
     src/gips_core.cpp
     src/gips_shader_loader.cpp
     src/gl_util.cpp
