@@ -137,6 +137,7 @@ static bool TreeNodeForGIPSNode(GIPS::App& app, int nodeIndex=0, GIPS::Node* nod
 
         if (ImGui::BeginMenu("filename")) {
             ImGui::TextUnformatted(node->filename());
+            ImGui::Text("relative path: %s", VFS::getRelPath(node->filename()));
             ImGui::EndMenu();
         }
         if (ImGui::Selectable("restore defaults")) {

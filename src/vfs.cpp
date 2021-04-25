@@ -27,7 +27,13 @@ static std::vector<std::string> roots;
 static std::unordered_map<std::string, CachedDirList> dirCache;
 
 void addRoot(const char* root) {
+    if (!root || !root[0]) {
+        return;
+    }
     roots.emplace_back(root);
+    #ifndef NDEBUG
+        fprintf(stderr, "added VFS root: '%s'\n", root);
+    #endif
 }
 
 int getRootCount() {
@@ -78,6 +84,23 @@ const DirList& getCachedDirList(const char* relRoot) {
     }   // END list update
     list.nextUpdate = now + std::chrono::seconds(1);
     return list;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+const char* getRelPath(const char* fullPath) {
+    if (!fullPath || !fullPath[0]) { return fullPath; }
+    for (const auto& root : roots) {
+        const char* pR = root.c_str();
+        const char* pP = fullPath;
+        while (*pR && *pP && ((*pR == *pP) || (StringUtil::ispathsep(*pR) && StringUtil::ispathsep(*pP))))
+            { ++pR; ++pP; }
+        if (!*pR && *pP) {
+            while (StringUtil::ispathsep(*pP)) { ++pP; }
+            return pP;
+        }
+    }
+    return fullPath;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

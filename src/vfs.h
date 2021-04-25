@@ -32,6 +32,10 @@ const char* getRoot(int index);
 
 DirList getDirList(const char* relRoot="");
 const DirList& getCachedDirList(const char* relRoot="");
+
+//! get the relative path from an absolute one
+//! \returns a pointer to the point inside fullPath where the relative path begins,
+//!          or fullPath itself if it's not relative to one of the roots
 const char* getRelPath(const char* fullPath);
 
 }  // namespace VFA
