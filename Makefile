@@ -23,6 +23,9 @@ debug:
 release:
 	$(MAKE) CMAKE_BUILD_TYPE=Release gips
 
+package: release
+	ninja -C _build package
+
 test: gips
 	./gips
 
@@ -37,4 +40,4 @@ ultraclean: distclean
 	rm -f vswhere.exe ninja.exe
 	rm -rf cmake-* pandoc-*
 
-.PHONY: all clean distclean ultraclean cppcheck debug release test
+.PHONY: all clean distclean ultraclean cppcheck debug release package test

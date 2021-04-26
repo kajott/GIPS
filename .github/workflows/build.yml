@@ -16,7 +16,7 @@ jobs:
           name: win32-package
           path: GIPS-*.zip
   linux-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
         with:
@@ -24,6 +24,14 @@ jobs:
       - name: Install Prerequisites
         run: |
           sudo apt -y update
-          sudo apt -y install ninja-build libgl-dev libwayland-dev libx11-dev libxrandr-dev libxinerama-dev libxkbcommon-dev libxcursor-dev libxi-dev
+          sudo apt -y install rpm ninja-build libgl-dev libwayland-dev libx11-dev libxrandr-dev libxinerama-dev libxkbcommon-dev libxcursor-dev libxi-dev
       - name: Linux Build
-        run: make release
+        run: make package
+      - name: Archive Linux Packages
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-packages
+          path: |
+            _build/*.deb
+            _build/*.rpm
+            _build/*.tar.xz
