@@ -9,12 +9,14 @@ jobs:
           submodules: recursive
       - name: Win32 Build
         shell: powershell
-        run: ./win32_build.ps1 -Package -Tagged
+        run: ./win32_build.ps1 -Package -Tagged -Installer
       - name: Archive Win32 Package
         uses: actions/upload-artifact@v2
         with:
-          name: win32-package
-          path: GIPS-*.zip
+          name: win32-packages
+          path: |
+            _build/GIPS-*.exe
+            GIPS-*.zip
   linux-build:
     runs-on: ubuntu-20.04
     steps:

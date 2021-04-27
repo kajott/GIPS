@@ -6,8 +6,10 @@
     and start the build process.
 .parameter NoBuild
     Prepare everything, but don't start the build.
+.parameter Installer
+    Create an NSIS-based installer. (Requires a system-wide NSIS installation!)
 .parameter Package
-    Create a distribution package after building.
+    Create a distribution package (portable ZIP file) after building.
 .parameter PackageOnly
     Don't build, only create a distribution package.
 .parameter Tagged
@@ -21,6 +23,7 @@
 param(
     [switch] $ShellOnly,
     [switch] $NoBuild,
+    [switch] $Installer,
     [switch] $Package,
     [switch] $PackageOnly,
     [switch] $Tagged,
@@ -118,11 +121,12 @@ if ((-not $PackageOnly) -or $ShellOnly) {
 "@
     $script += "call `"$vcvars`"`n"
     $script += "`"$cmake`" -GNinja -DCMAKE_BUILD_TYPE=$BuildType -DCMAKE_C_COMPILER=cl.exe -DCMAKE_CXX_COMPILER=cl.exe ..`n"
-    $script += @"
-@if errorlevel 1 goto end
-..\ninja
-:end
-"@
+    $script += "@if errorlevel 1 goto end`n"
+    $script += "..\\ninja"
+    if ($Installer) {
+        $script += " package"
+    }
+    $script += "`n:end"
     $script | Set-Content -Path _build/build.cmd -Encoding ascii
 
     # finally, run the build
