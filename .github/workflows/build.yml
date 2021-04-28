@@ -13,9 +13,9 @@ jobs:
       - name: Archive Win32 Package
         uses: actions/upload-artifact@v2
         with:
-          name: win32-packages
+          name: packages
           path: |
-            _build/GIPS-*.exe
+            GIPS-*.exe
             GIPS-*.zip
   linux-build:
     runs-on: ubuntu-20.04
@@ -32,8 +32,8 @@ jobs:
       - name: Archive Linux Packages
         uses: actions/upload-artifact@v2
         with:
-          name: linux-packages
+          name: packages
           path: |
-            _build/*.deb
-            _build/*.rpm
-            _build/*.tar.xz
+            gips*.deb
+            gips*.rpm
+            gips*.tar.xz

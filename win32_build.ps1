@@ -163,7 +163,7 @@ if ($PackageOnly -or ($Package -and (-not $NoBuild))) {
             $archive += "-g" + $rev.Substring(0, 7)
         }
     }
-    $archive += "-win32.zip"
+    $archive += "-win64.zip"
 
     # check for existing Pandoc
     $pandoc = (Get-Item "pandoc-*/pandoc.exe" | Select-Object -ExpandProperty FullName)
