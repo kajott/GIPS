@@ -175,6 +175,9 @@ public:
 
     PixelFormat detectFormat() const;
 
+    std::string serialize(int showIndex);
+    int unserialize(char* data);
+
     inline Pipeline() {}
     Pipeline(const Pipeline&) = delete;
     void free();

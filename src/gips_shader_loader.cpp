@@ -73,8 +73,6 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
     // Declare all variables right here, C89-style.
     // This is required because we're using "goto end"-style error handling
     // here, and we can't jump over class initializations.
-    FILE *f = nullptr;
-    size_t fsize = 0;
     char *code = nullptr;
     std::vector<Parameter> newParams;
     std::ostringstream shader;
@@ -114,25 +112,11 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
     m_preferredFormat = PixelFormat::DontCare;
 
     // load the file
-    f = fopen(filename, "rb");
-    if (!f) {
-        err << "(GIPS) failed to open input file '" << filename << "'\n";
-        goto load_finalize;
-    }
-    fseek(f, 0, SEEK_END);
-    fsize = size_t(ftell(f));
-    fseek(f, 0, SEEK_SET);
-    code = static_cast<char*>(malloc(fsize + 1));
+    code = StringUtil::loadTextFile(filename);
     if (!code) {
-        err << "(GIPS) out of memory while loading the input file\n";
+        err << "(GIPS) failed to load input file '" << filename << "'\n";
         goto load_finalize;
     }
-    if (fread(code, 1, fsize, f) != fsize) {
-        err << "(GIPS) failed to read input file '" << filename << "'\n";
-        goto load_finalize;
-    }
-    fclose(f);  f = nullptr;
-    code[fsize] = '\0';
 
     // analyze the GLSL code
     tok.init(code);
@@ -500,7 +484,6 @@ bool Node::load(const char* filename, const GLutil::Shader& vs, const FileUtil::
     m_passCount = currentPass;
 
 load_finalize:
-    if (f) { fclose(f); }
     ::free(code);
     m_errors = err.str();
     m_params = newParams;

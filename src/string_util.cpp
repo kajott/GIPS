@@ -75,6 +75,29 @@ char* Tokenizer::extractToken() const {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+char* loadTextFile(const char* filename, int *p_size) {
+    if (!filename || !filename[0]) { return nullptr; }
+    FILE* f = fopen(filename, "rb");
+    if (!f) { return nullptr; }
+    fseek(f, 0, SEEK_END);
+    size_t size = size_t(ftell(f));
+    fseek(f, 0, SEEK_SET);
+    char* data = static_cast<char*>(malloc(size + 1));
+    if (!data) { fclose(f); return nullptr; }
+    size_t res = fread(data, 1, size, f);
+    fclose(f);
+    if (p_size) { *p_size = int(res); }
+    if (res != size) {
+        ::free(data);
+        return nullptr;
+    } else {
+        data[size] = '\0';
+        return data;
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 int countLines(const char* s) {
     int lines = 1, realLines = 0;
     for (;  *s;  ++s) {

@@ -126,14 +126,14 @@ private:
             MoveNode,
             ClearPipeline,
             UpdateSource,
-            HandleFile,
-            SaveResult,
+            LoadFile,
+            SaveFile,
             LoadClipboard,
             SaveClipboard,
         } type = Type::None;
         int nodeIndex = 0;    //!< node index (1-based) for all operations
         int targetIndex = 0;  //!< target index (for MoveNode only)
-        std::string path;     //!< path to load (for LoadNode and SaveResult only)
+        std::string path;     //!< path to load (for LoadNode and SaveFile only)
     } m_pcr;
 
     // auto-test mode
@@ -157,8 +157,11 @@ private:
 
     // UI functions (implemented in gips_ui.cpp)
     void drawUI();
-    void showLoadUI(bool withShaders=true);
+    void showLoadUI(bool imagesOnly=false);
     void showSaveUI();
+
+    // pipeline loading
+    bool loadPipeline(const char* filename);
 
     // image source modification functions
     bool uploadImageTexture(uint8_t* data, int width, int height, ImageSource src, bool mustFreeData=true);
@@ -167,8 +170,8 @@ private:
     bool loadPattern();
     bool updateImage();
 
-    // image result saving
-    bool saveResult(const char* filename, bool toClipboard=false);
+    // pipeline and image result saving
+    bool saveFile(const char* filename, bool toClipboard=false);
 
     // auto-test mode implementation
     void startAutoTest(const char* scanDir=nullptr);
@@ -207,10 +210,10 @@ public:
         { m_pcr.type = PipelineChangeRequest::Type::ClearPipeline; }
     inline void requestUpdateSource()
         { m_pcr.type = PipelineChangeRequest::Type::UpdateSource; }
-    inline void requestHandleFile(const char* filename)
-        { m_pcr.type = PipelineChangeRequest::Type::HandleFile; m_pcr.path = filename; }
-    inline void requestSaveResult(const char* filename)
-        { m_pcr.type = PipelineChangeRequest::Type::SaveResult; m_pcr.path = filename; }
+    inline void requestLoadFile(const char* filename)
+        { m_pcr.type = PipelineChangeRequest::Type::LoadFile; m_pcr.path = filename; }
+    inline void requestSaveFile(const char* filename)
+        { m_pcr.type = PipelineChangeRequest::Type::SaveFile; m_pcr.path = filename; }
     inline void requestLoadClipboard()
         { m_pcr.type = PipelineChangeRequest::Type::LoadClipboard; }
     inline void requestSaveClipboard()
@@ -236,6 +239,10 @@ public:
         { setStatus(StatusType::Success, msg.c_str()); return true; }
     inline bool setSuccess(const char* msg=nullptr)
         { setStatus(StatusType::Success, msg); return true; }
+
+    static bool isPipelineFile(uint32_t extCode);
+    static inline bool isPipelineFile(const char* filename)
+        { return isPipelineFile(StringUtil::extractExtCode(filename)); }
 
     static bool isShaderFile(uint32_t extCode);
     static inline bool isShaderFile(const char* filename)

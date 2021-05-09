@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
 // SPDX-License-Identifier: MIT
 
+#ifdef _MSC_VER
+    #define _CRT_SECURE_NO_WARNINGS  // prevent MSVC warnings
+#endif
+
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -39,6 +43,10 @@ extern "C" const char* git_branch;
 namespace GIPS {
 
 ///////////////////////////////////////////////////////////////////////////////
+
+bool App::isPipelineFile(uint32_t extCode) {
+    return (extCode == StringUtil::makeExtCode("gips"));
+}
 
 bool App::isShaderFile(uint32_t extCode) {
     return (extCode == StringUtil::makeExtCode("glsl"))
@@ -209,6 +217,9 @@ int App::run(int argc, char *argv[]) {
 
     // main loop
     while (m_active && !glfwWindowShouldClose(m_window)) {
+        #ifndef NDEBUG
+            // putchar('.'); fflush(stdout);  // DEBUG: show frames
+        #endif
         bool frameRequested = (m_renderFrames > 0);
         if (frameRequested) {
             glfwPollEvents();
@@ -247,14 +258,14 @@ int App::run(int argc, char *argv[]) {
         }
 
         // request to save?
-        if (m_pcr.type == PipelineChangeRequest::Type::SaveResult) {
-            saveResult(m_pcr.path.c_str());
+        if (m_pcr.type == PipelineChangeRequest::Type::SaveFile) {
+            saveFile(m_pcr.path.c_str());
             m_pcr.type = PipelineChangeRequest::Type::None;
             m_pcr.path.clear();
             requestFrames(1);
         }
         if (m_pcr.type == PipelineChangeRequest::Type::SaveClipboard) {
-            saveResult(nullptr, true);
+            saveFile(nullptr, true);
             m_pcr.type = PipelineChangeRequest::Type::None;
             requestFrames(1);
         }
@@ -348,10 +359,12 @@ void App::handleKeyEvent(int key, int scancode, int action, int mods) {
             if (ctrl) { showSaveUI(); }
             break;
         case GLFW_KEY_C:
-            if (ctrl) { saveResult(nullptr, true); }
+            if (ctrl) { saveFile(nullptr, true); }
             break;
         case GLFW_KEY_V:
-            if (ctrl) { loadImage(nullptr, true, true); }
+            if (ctrl) {
+                if (!loadPipeline(nullptr)) { loadImage(nullptr, true, true); }
+            }
             break;
         case GLFW_KEY_Q:
             if (ctrl) { m_active = false; }
@@ -534,19 +547,19 @@ bool App::handlePCR() {
             }
             break;
 
-        case PipelineChangeRequest::Type::HandleFile:
+        case PipelineChangeRequest::Type::LoadFile:
             handleInputFile(m_pcr.path.c_str());
             done = true;
             break;
 
-        case PipelineChangeRequest::Type::SaveResult:
-            if (isSaveImageFile(m_pcr.path.c_str())) {
-                return true;  // don't clear the PCR yet
-            }
+        case PipelineChangeRequest::Type::SaveFile:
+            return true;  // don't clear the PCR yet
             break;
 
         case PipelineChangeRequest::Type::LoadClipboard:
-            loadImage(nullptr, true, true);
+            if (!loadPipeline(nullptr)) {
+                loadImage(nullptr, true, true);
+            }
             done = true;
             break;
 
@@ -567,7 +580,9 @@ bool App::handlePCR() {
 
 void App::handleInputFile(const char* filename) {
     uint32_t extCode = StringUtil::extractExtCode(filename);
-    if (isShaderFile(extCode)) {
+    if (isPipelineFile(extCode)) {
+        loadPipeline(filename);
+    } else if (isShaderFile(extCode)) {
         if (m_pipeline.addNode(filename, m_showIndex)) {
             m_showIndex++;
         }
@@ -576,6 +591,46 @@ void App::handleInputFile(const char* filename) {
     } else {
         setError("can't open file: unrecognized file type");
     }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+bool App::loadPipeline(const char* filename) {
+    char *data = nullptr;
+    bool fromClipboard = (filename == nullptr);
+    if (fromClipboard) {
+        // filename is NULL -> clipboard mode, fail silently
+        #ifndef NDEBUG
+            fprintf(stderr, "trying to load pipeline from clipboard ...\n");
+        #endif
+        data = Clipboard::getString();
+        if (!data) {
+            #ifndef NDEBUG
+                fprintf(stderr, "... no string data in clipboard\n");
+            #endif
+            return false;
+        }
+    } else {
+        // filename is valid -> file mode, report all errors
+        #ifndef NDEBUG
+            fprintf(stderr, "loading pipeline from file '%s'\n", filename);
+        #endif
+        data = StringUtil::loadTextFile(filename);
+        if (!data) {
+            return setError("can't read pipeline file");
+        }
+    }
+    bool ok = false;
+    int newShowIndex = m_pipeline.unserialize(data);
+    if (newShowIndex >= 0) {
+        m_showIndex = newShowIndex;
+        ok = setSuccess(fromClipboard ? "loaded pipeline from clipboard"
+                                      : "loaded pipeline from file");
+    } else if (!fromClipboard) {
+        setError("invalid pipeline file");
+    }
+    ::free(data);
+    return ok;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -640,7 +695,7 @@ bool App::loadImage(const char* filename, bool useClipboard, bool updateClipboar
     if (updateClipboard || (useClipboard && !m_clipboardImage)) {
         ::free(m_clipboardImage);
         m_clipboardImage = Clipboard::getRGBA8Image(m_clipboardWidth, m_clipboardHeight);
-        if (!m_clipboardImage) { return setError("failed to import image from the clipboard"); }
+        if (!m_clipboardImage) { return setError("failed to import pipeline or image from the clipboard"); }
     }
     if (useClipboard) {
         rawData = (uint8_t*) m_clipboardImage;
@@ -719,93 +774,110 @@ bool App::updateImage() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool App::saveResult(const char* filename, bool toClipboard) {
+bool App::saveFile(const char* filename, bool toClipboard) {
+    // decide what to do and where to put it
     if (!toClipboard && (!filename || !filename[0])) { return false; }
     if (toClipboard && !Clipboard::isAvailable()) {
         return setError("clipboard is not supported on this platform");
     }
-
-    // assumes that filename is already validated to be one of the supported
-    // formats! (otherwise we'll fail, and very lately so!)
+    bool saveImage = toClipboard || isSaveImageFile(filename);
+    std::string savePipeline((toClipboard || isPipelineFile(filename))
+                             ? m_pipeline.serialize(m_showIndex) : "");
+    if (!saveImage && savePipeline.empty()) {
+        return setError("output is neither an image nor a pipeline file");
+    }
     #ifndef NDEBUG
         if (toClipboard) {
             fprintf(stderr, "saving to clipboard\n");
         } else {
-            fprintf(stderr, "saving '%s'\n", filename);
+            fprintf(stderr, "saving %s to '%s'\n", saveImage ? "image" : "pipeline", filename);
         }
     #endif
     if (!toClipboard) {
         m_lastSaveFilename = filename;
     }
-    GLuint tex = 0;
-    bool needStagingTexture = (m_pipeline.format() != PixelFormat::Int8);
 
-    if (needStagingTexture) {
-        // create staging texture
-        GLutil::clearError();
-        glGenTextures(1, &tex);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_imgWidth, m_imgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-        if (GLutil::checkError("saving texture creation")) { return setError("failed to create temporary texture for saving"); }
+    if (saveImage) {
+        GLuint tex = 0;
+        bool needStagingTexture = (m_pipeline.format() != PixelFormat::Int8);
 
-        // copy result into staging texture
-        m_renderDirect.prog.use();
-        glBindTexture(GL_TEXTURE_2D, m_pipeline.resultTex());
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glUniform4f(m_renderDirect.areaLoc, -1.0f, -1.0f, 2.0f, 2.0f);
-        glViewport(0, 0, m_imgWidth, m_imgHeight);
-        if (GLutil::checkError("saving render preparation")) { return setError("image retrieval failed"); }
-        m_helperFBO.begin(tex);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        m_helperFBO.end();
-        if (GLutil::checkError("saving render draw operation")) { return setError("image retrieval failed"); }
-    } else {
-        // pipeline runs in 8-bit integer mode -> can read the source directly
-        tex = m_pipeline.resultTex();
-    }
+        if (needStagingTexture) {
+            // create staging texture
+            GLutil::clearError();
+            glGenTextures(1, &tex);
+            glBindTexture(GL_TEXTURE_2D, tex);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_imgWidth, m_imgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            if (GLutil::checkError("saving texture creation")) { return setError("failed to create temporary texture for saving"); }
 
-    // read image data from the texture
-    uint8_t *data = (uint8_t*) malloc(m_imgWidth * m_imgHeight * 4);
-    if (!data) { return setError("out of memory"); }
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    if (needStagingTexture) {
-        glDeleteTextures(1, &tex);
-    }
-    if (GLutil::checkError("saving texture readback")) { ::free(data); return setError("image retrieval failed"); }
-
-    // save the image
-    if (toClipboard) {
-        bool ok = Clipboard::setRGBA8Image(data, m_imgWidth, m_imgHeight);
-        ::free(data);
-        if (ok) { return setSuccess("image copied into the clipboard"); }
-        else    { return setError("failed copying the result image into the clipboard"); }
-    } else {
-        int res;
-        switch (StringUtil::extractExtCode(filename)) {
-            case StringUtil::makeExtCode("jpg"):
-            case StringUtil::makeExtCode("jpeg"):
-            case StringUtil::makeExtCode("jpe"):
-                res = stbi_write_jpg(filename, m_imgWidth, m_imgHeight, 4, data, 98);
-                break;
-            case StringUtil::makeExtCode("png"):
-                res = stbi_write_png(filename, m_imgWidth, m_imgHeight, 4, data, 0);
-                break;
-            case StringUtil::makeExtCode("tga"):
-                res = stbi_write_tga(filename, m_imgWidth, m_imgHeight, 4, data);
-                break;
-            case StringUtil::makeExtCode("bmp"):
-                res = stbi_write_bmp(filename, m_imgWidth, m_imgHeight, 4, data);
-                break;
-            default:
-                ::free(data); return setError("unrecognized output file format");
+            // copy result into staging texture
+            m_renderDirect.prog.use();
+            glBindTexture(GL_TEXTURE_2D, m_pipeline.resultTex());
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glUniform4f(m_renderDirect.areaLoc, -1.0f, -1.0f, 2.0f, 2.0f);
+            glViewport(0, 0, m_imgWidth, m_imgHeight);
+            if (GLutil::checkError("saving render preparation")) { return setError("image retrieval failed"); }
+            m_helperFBO.begin(tex);
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+            m_helperFBO.end();
+            if (GLutil::checkError("saving render draw operation")) { return setError("image retrieval failed"); }
+        } else {
+            // pipeline runs in 8-bit integer mode -> can read the source directly
+            tex = m_pipeline.resultTex();
         }
-        ::free(data);
-        if (res == 0) { return setError("image saving failed"); }
-        return setSuccess("image saved");
+
+        // read image data from the texture
+        uint8_t *data = (uint8_t*) malloc(m_imgWidth * m_imgHeight * 4);
+        if (!data) { return setError("out of memory"); }
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        if (needStagingTexture) {
+            glDeleteTextures(1, &tex);
+        }
+        if (GLutil::checkError("saving texture readback")) { ::free(data); return setError("image retrieval failed"); }
+
+        // save the image
+        if (toClipboard) {
+            bool ok = Clipboard::setRGBA8ImageAndText(data, m_imgWidth, m_imgHeight, savePipeline.c_str(), int(savePipeline.size()));
+            ::free(data);
+            if (ok) { return setSuccess("pipeline and image copied into the clipboard"); }
+            else    { return setError("failed to set clipboard contents"); }
+        } else {
+            int res;
+            switch (StringUtil::extractExtCode(filename)) {
+                case StringUtil::makeExtCode("jpg"):
+                case StringUtil::makeExtCode("jpeg"):
+                case StringUtil::makeExtCode("jpe"):
+                    res = stbi_write_jpg(filename, m_imgWidth, m_imgHeight, 4, data, 98);
+                    break;
+                case StringUtil::makeExtCode("png"):
+                    res = stbi_write_png(filename, m_imgWidth, m_imgHeight, 4, data, 0);
+                    break;
+                case StringUtil::makeExtCode("tga"):
+                    res = stbi_write_tga(filename, m_imgWidth, m_imgHeight, 4, data);
+                    break;
+                case StringUtil::makeExtCode("bmp"):
+                    res = stbi_write_bmp(filename, m_imgWidth, m_imgHeight, 4, data);
+                    break;
+                default:
+                    ::free(data); return setError("unrecognized output file format");
+            }
+            ::free(data);
+            if (res == 0) { return setError("image saving failed"); }
+            return setSuccess("image saved");
+        }
+    } else if (!savePipeline.empty()) {
+        bool ok = false;
+        FILE* f = fopen(filename, "wb");
+        if (f) {
+            ok = (fwrite(savePipeline.data(), 1, savePipeline.size(), f) == savePipeline.size());
+            fclose(f);
+        }
+        if (ok) { return setSuccess("pipeline saved"); }
+        else    { return setError("pipeline saving failed"); }
     }
+    else { return false; /* unreachable */ }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

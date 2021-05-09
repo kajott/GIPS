@@ -33,6 +33,12 @@ const char* getRoot(int index);
 DirList getDirList(const char* relRoot="");
 const DirList& getCachedDirList(const char* relRoot="");
 
+//! get the full absolute path from a relative one
+//! \returns a newly-allocated string containing a full path,
+//!          or a copy of the input path if it was already an absolute path
+//!          or if it could not be found inside the VFS
+char* getFullPath(const char* relPath);
+
 //! get the relative path from an absolute one
 //! \returns a pointer to the point inside fullPath where the relative path begins,
 //!          or fullPath itself if it's not relative to one of the roots

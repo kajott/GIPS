@@ -14,12 +14,16 @@ bool Clipboard::isAvailable() {
     return false;
 }
 
+char* Clipboard::getString() {
+    return nullptr;
+}
+
 void* Clipboard::getRGBA8Image(int &width, int &height) {
     width = height = 0;
     return nullptr;
 }
 
-bool Clipboard::setRGBA8Image(const void* image, int width, int height) {
-    (void)image, (void)width, (void)height;
+bool Clipboard::setRGBA8ImageAndText(const void* image, int width, int height, const char* text, int length) {
+    (void)image, (void)width, (void)height, (void)text, (void)length;
     return false;
 }

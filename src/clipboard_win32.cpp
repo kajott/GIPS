@@ -19,6 +19,8 @@
 
 #include "stb_image.h"
 
+#include "string_util.h"
+
 #include "clipboard.h"
 
 namespace Clipboard {
@@ -33,6 +35,21 @@ void init(GLFWwindow* window) {
 
 bool isAvailable() {
     return (hWnd != 0);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+char* getString() {
+    char* res = nullptr;
+    if (OpenClipboard(hWnd)) {
+        HANDLE hText = GetClipboardData(CF_TEXT);
+        if (hText) {
+            res = StringUtil::copy((const char*) GlobalLock(hText));
+            GlobalUnlock(hText);
+        }
+        CloseClipboard();
+    }
+    return res;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -172,7 +189,7 @@ void* getRGBA8Image(int &width, int &height) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool setRGBA8Image(const void* image, int width, int height) {
+bool setRGBA8ImageAndText(const void* image, int width, int height, const char* text, int length) {
     // sanity check
     if (!image || (width < 1) || (height < 1)) { return false; }
 
@@ -215,6 +232,18 @@ bool setRGBA8Image(const void* image, int width, int height) {
     if (!EmptyClipboard()) { GlobalFree(hDIB); CloseClipboard(); return false; }
     bool ok = SetClipboardData(CF_DIB, hDIB) != nullptr;
     if (!ok) { GlobalFree(hDIB); }
+    if (text && text[0] && length) {
+        if (length < 0) { length = int(strlen(text)); }
+        HGLOBAL hText = GlobalAlloc(GMEM_MOVEABLE, SIZE_T(length) + 1u);
+        if (hText) {
+            char* textData = (char*) GlobalLock(hText);
+            if (textData) {
+                strcpy(textData, text);
+                GlobalUnlock(hText);
+                if (SetClipboardData(CF_TEXT, hText) == nullptr) { GlobalFree(hText); }
+            } else { GlobalFree(hText); }
+        }
+    }
     CloseClipboard();
     return ok;
 }

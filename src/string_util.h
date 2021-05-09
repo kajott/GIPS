@@ -66,6 +66,13 @@ inline T lookup(const LookupEntry<T>* table, const char* str) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+char* loadTextFile(const char* filename, int *p_size=nullptr);
+
+inline char* loadTextFile(const char* filename, int& size)
+    { return loadTextFile(filename, &size); }
+
+///////////////////////////////////////////////////////////////////////////////
+
 inline bool isempty(const char* s) { return !s || !s[0]; }
 
 int countLines(const char* s);

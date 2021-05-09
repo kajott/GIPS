@@ -88,6 +88,25 @@ const DirList& getCachedDirList(const char* relRoot) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+char* getFullPath(const char* relPath) {
+    if (!relPath || !relPath[0]) { return nullptr; }
+    if (StringUtil::isAbsPath(relPath)) { return StringUtil::copy(relPath); }
+    FileUtil::FileFingerprint bestFP;
+    char* bestPath = nullptr;
+    for (const auto& root : roots) {
+        char* checkPath = StringUtil::pathJoin(root.c_str(), relPath);
+        FileUtil::FileFingerprint checkFP(checkPath);
+        if (checkFP.newerThan(bestFP)) {
+            ::free(bestPath);
+            bestFP = checkFP;
+            bestPath = checkPath;
+        } else {
+            ::free(checkPath);
+        }
+    }
+    return bestPath ? bestPath : StringUtil::copy(relPath);
+}
+
 const char* getRelPath(const char* fullPath) {
     if (!fullPath || !fullPath[0]) { return fullPath; }
     for (const auto& root : roots) {

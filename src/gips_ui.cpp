@@ -80,6 +80,7 @@ static void ShaderBrowserMenu(GIPS::App& app, int nodeIndex, const char* dir) {
             if (ImGui::BeginMenu(item.nameNoExt.c_str())) {
                 ShaderBrowserMenu(app, nodeIndex, item.relPath.c_str());
                 ImGui::EndMenu();
+                app.requestFrames(1);
             }
         } else if (app.isShaderFile(item.fullPath.c_str())) {
             if (ImGui::Selectable(item.nameNoExt.c_str())) {
@@ -222,7 +223,7 @@ void GIPS::App::drawUI() {
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("Open ...", "Ctrl+O")) { showLoadUI(); }
-                if (ImGui::MenuItem("Save Result ...", "Ctrl+S")) { showSaveUI(); }
+                if (ImGui::MenuItem("Save ...", "Ctrl+S")) { showSaveUI(); }
                 ImGui::Separator();
                 if (Clipboard::isAvailable()) {
                     if (ImGui::MenuItem("Paste Image from Clipboard", "Ctrl+V")) { requestLoadClipboard(); }
@@ -301,7 +302,7 @@ void GIPS::App::drawUI() {
 
             // image source
             if (m_imgSource == ImageSource::Image) {
-                if (ImGui::Button("Open ...")) { showLoadUI(false); }
+                if (ImGui::Button("Open ...")) { showLoadUI(true); }
                 ImGui::SameLine();
                 ImGui::TextUnformatted(m_clipboardImage ? "(Clipboard)" : m_imgFilename.c_str());
                 if (ImGui::Checkbox("resize to target size if larger", &m_imgResize)) {
@@ -515,26 +516,29 @@ void GIPS::App::drawUI() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void GIPS::App::showLoadUI(bool withShaders) {
+void GIPS::App::showLoadUI(bool imagesOnly) {
     std::vector<std::string> filters;
+    static const std::string extP("*gips");
     static const std::string extI("*.jpg *.jpeg *.png *.bmp *.tga *.pgm *.ppm *.gif *.psd");
     static const std::string extS("*.glsl *.frag *.fs");
-    if (withShaders) {
-        filters.push_back("Image or Shader Files");
-        filters.push_back(extI + " " + extS);
+    if (!imagesOnly) {
+        filters.push_back("All Supported Files");
+        filters.push_back(extP + " " + extI + " " + extS);
+        filters.push_back("GIPS Pipelines (" + extP + ")");
+        filters.push_back(extP);
     }
-    filters.push_back("Image Files");
+    filters.push_back("Image Files (" + extI + ")");
     filters.push_back(extI);
-    if (withShaders) {
-        filters.push_back("Shader Files");
+    if (!imagesOnly) {
+        filters.push_back("Shader Files (" + extS + ")");
         filters.push_back(extS);
     }
     filters.push_back("All Files");
     filters.push_back("*");
 
-    auto path = pfd_open_file_wrapper("Open Source Image or Shader", m_imgFilename, filters);
+    auto path = pfd_open_file_wrapper(imagesOnly ? "Open Source Image" : "Open Pipeline, Shader or Source Image", m_imgFilename, filters);
     if (!path.empty()) {
-        requestHandleFile(path[0].c_str());
+        requestLoadFile(path[0].c_str());
     }
 }
 
@@ -542,12 +546,16 @@ void GIPS::App::showLoadUI(bool withShaders) {
 
 void GIPS::App::showSaveUI() {
     auto path = pfd_save_file_wrapper(
-        "Save Result Image", m_lastSaveFilename,
-        { "Image Files", "*.jpg *.png *.bmp *.tga",
+        "Save Pipeline or Result Image", m_lastSaveFilename,
+        { "GIPS Pipelines (*.gips)", "*.gips",
+          "Image Files (*.jpg *.png *.bmp *.tga)", "*.jpg *.png *.bmp *.tga",
           "All Files", "*" }
     );
     if (!path.empty()) {
-        requestSaveResult(path.c_str());
+        if (!StringUtil::extractExtCode(path.c_str())) {
+            path += ".gips";  // add default extension
+        }
+        requestSaveFile(path.c_str());
     }
 }
 
