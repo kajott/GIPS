@@ -93,6 +93,9 @@ std::string Pipeline::serialize(int showIndex) {
         }   // END of parameter loop
     }   // END of node loop
 
+    #ifndef NDEBUG
+        fprintf(stderr, "serialized pipeline to string\n");
+    #endif
     return f.str();
 }
 
@@ -111,6 +114,9 @@ static int hex2int(char c) {
 
 int Pipeline::unserialize(char* data) {
     if (!data || !data[0]) { return -1; }
+    #ifndef NDEBUG
+        fprintf(stderr, "unserializing pipeline from string\n");
+    #endif
     bool waitingForSection = true;
     Node* node = nullptr;
     int showIndex = -1;

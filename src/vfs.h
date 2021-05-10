@@ -24,11 +24,23 @@ struct DirList {
     void merge(DirList& src);
 };
 
-void addRoot(const char* root);
-inline void addRoot(const std::string& root) { addRoot(root.c_str()); }
-
+int addRoot(const char* root);
+void removeRoot(int idx);
+inline int addRoot(const std::string& root) { return addRoot(root.c_str()); }
 int getRootCount();
 const char* getRoot(int index);
+
+//! helper to temporarily add a VFS root for a file's directory when loading
+//! and saving pipeline files
+class TemporaryRoot {
+    int m_idx = -1;
+public:
+    void begin(const char* filename);
+    inline void end() { removeRoot(m_idx); m_idx = -1; }
+    inline TemporaryRoot() {}
+    inline TemporaryRoot(const char* filename) { begin(filename); }
+    inline ~TemporaryRoot() { end(); }
+};
 
 DirList getDirList(const char* relRoot="");
 const DirList& getCachedDirList(const char* relRoot="");

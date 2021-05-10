@@ -598,6 +598,7 @@ void App::handleInputFile(const char* filename) {
 bool App::loadPipeline(const char* filename) {
     char *data = nullptr;
     bool fromClipboard = (filename == nullptr);
+    VFS::TemporaryRoot tempRoot;
     if (fromClipboard) {
         // filename is NULL -> clipboard mode, fail silently
         #ifndef NDEBUG
@@ -619,9 +620,11 @@ bool App::loadPipeline(const char* filename) {
         if (!data) {
             return setError("can't read pipeline file");
         }
+        tempRoot.begin(filename);
     }
     bool ok = false;
     int newShowIndex = m_pipeline.unserialize(data);
+    tempRoot.end();
     if (newShowIndex >= 0) {
         m_showIndex = newShowIndex;
         ok = setSuccess(fromClipboard ? "loaded pipeline from clipboard"
@@ -781,8 +784,12 @@ bool App::saveFile(const char* filename, bool toClipboard) {
         return setError("clipboard is not supported on this platform");
     }
     bool saveImage = toClipboard || isSaveImageFile(filename);
-    std::string savePipeline((toClipboard || isPipelineFile(filename))
+    VFS::TemporaryRoot tempRoot;
+    bool pipelineFile = isPipelineFile(filename);
+    if (pipelineFile) { tempRoot.begin(filename); }
+    std::string savePipeline((toClipboard || pipelineFile)
                              ? m_pipeline.serialize(m_showIndex) : "");
+    tempRoot.end();
     if (!saveImage && savePipeline.empty()) {
         return setError("output is neither an image nor a pipeline file");
     }

@@ -26,14 +26,24 @@ struct CachedDirList : public DirList {
 static std::vector<std::string> roots;
 static std::unordered_map<std::string, CachedDirList> dirCache;
 
-void addRoot(const char* root) {
+int addRoot(const char* root) {
     if (!root || !root[0]) {
-        return;
+        return -1;
     }
+    int idx = int(roots.size());
     roots.emplace_back(root);
     #ifndef NDEBUG
-        fprintf(stderr, "added VFS root: '%s'\n", root);
+        fprintf(stderr, "added VFS root #%d: '%s'\n", idx, root);
     #endif
+    return idx;
+}
+
+void removeRoot(int idx) {
+    if ((idx < 0) || (idx >= int(roots.size()))) { return; }
+    #ifndef NDEBUG
+        fprintf(stderr, "removed VFS root #%d: '%s'\n", idx, roots[idx].c_str());
+    #endif
+    roots.erase(roots.begin() + idx);
 }
 
 int getRootCount() {
@@ -42,6 +52,12 @@ int getRootCount() {
 
 const char* getRoot(int index) {
     return ((index >= 0) && (index < int(roots.size()))) ? roots[size_t(index)].c_str() : nullptr;
+}
+
+void TemporaryRoot::begin(const char* filename) {
+    char* dirName = StringUtil::pathDirName(filename);
+    m_idx = VFS::addRoot(dirName);
+    ::free(dirName);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
