@@ -60,10 +60,14 @@ Here are some specific hints for the non-obvious things:
   This way, it's also possible to input values outside of the slider's range.
 - Press F5 to reload the shaders.
 - Press Ctrl+F5 to reload the shaders and the input image.
-- Press Ctrl+C to to copy the current result into the clipboard.
-  - Note that alpha isn't preserved properly.
-- Press Ctrl+V to replace the current input image with the clipboard contents.
-  - Note that not all source applications export the alpha channel.
+- The current pipeline (i.e. the list of filters and their parameters)
+  can be saved and loaded.
+- Press Ctrl+C to to copy the current pipeline (as text)
+  and the current image into the clipboard.
+  - Note that alpha isn't preserved properly for the image.
+- Press Ctrl+V to paste a GIPS pipeline from the clipboard (if it contains one),
+  or replace the current input image with the clipboard contents.
+  - Note that not all image source applications export the alpha channel.
     (For example, GIMP and Affinity Photo do, Photoshop doesn't; 
     also, Photoshop won't export more than 3620x3620 pixels *at all*.)
 
