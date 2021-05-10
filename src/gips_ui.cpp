@@ -223,11 +223,12 @@ void GIPS::App::drawUI() {
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("Open ...", "Ctrl+O")) { showLoadUI(); }
-                if (ImGui::MenuItem("Save ...", "Ctrl+S")) { showSaveUI(); }
+                if (ImGui::MenuItem("Save ...", "Ctrl+S")) { showSaveUI(true); }
+                if (ImGui::MenuItem("Save As ...", "Ctrl+Shift+S")) { showSaveUI(); }
                 ImGui::Separator();
                 if (Clipboard::isAvailable()) {
-                    if (ImGui::MenuItem("Paste Image from Clipboard", "Ctrl+V")) { requestLoadClipboard(); }
-                    if (ImGui::MenuItem("Copy Image to Clipboard", "Ctrl+C")) { requestSaveClipboard(); }
+                    if (ImGui::MenuItem("Paste from Clipboard", "Ctrl+V")) { requestLoadClipboard(); }
+                    if (ImGui::MenuItem("Copy to Clipboard", "Ctrl+C")) { requestSaveClipboard(); }
                     ImGui::Separator();
                 }
                 if (ImGui::BeginMenu("Clear Pipeline", (m_pipeline.nodeCount() > 0))) {
@@ -544,13 +545,14 @@ void GIPS::App::showLoadUI(bool imagesOnly) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void GIPS::App::showSaveUI() {
-    auto path = pfd_save_file_wrapper(
-        "Save Pipeline or Result Image", m_lastSaveFilename,
-        { "GIPS Pipelines (*.gips)", "*.gips",
-          "Image Files (*.jpg *.png *.bmp *.tga)", "*.jpg *.png *.bmp *.tga",
-          "All Files", "*" }
-    );
+void GIPS::App::showSaveUI(bool useLastPath) {
+    std::string path((useLastPath && !m_lastSaveFilename.empty()) ? m_lastSaveFilename :
+        pfd_save_file_wrapper(
+            "Save Pipeline or Result Image", m_lastSaveFilename,
+            { "GIPS Pipelines (*.gips)", "*.gips",
+            "Image Files (*.jpg *.png *.bmp *.tga)", "*.jpg *.png *.bmp *.tga",
+            "All Files", "*" }
+        ));
     if (!path.empty()) {
         if (!StringUtil::extractExtCode(path.c_str())) {
             path += ".gips";  // add default extension

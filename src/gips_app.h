@@ -158,7 +158,7 @@ private:
     // UI functions (implemented in gips_ui.cpp)
     void drawUI();
     void showLoadUI(bool imagesOnly=false);
-    void showSaveUI();
+    void showSaveUI(bool useLastPath=false);
 
     // pipeline loading
     bool loadPipeline(const char* filename);

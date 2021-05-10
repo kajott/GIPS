@@ -356,7 +356,7 @@ void App::handleKeyEvent(int key, int scancode, int action, int mods) {
             if (ctrl) { showLoadUI(); }
             break;
         case GLFW_KEY_S:
-            if (ctrl) { showSaveUI(); }
+            if (ctrl) { showSaveUI(!(mods & GLFW_MOD_SHIFT)); }
             break;
         case GLFW_KEY_C:
             if (ctrl) { saveFile(nullptr, true); }
