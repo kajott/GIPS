@@ -9,7 +9,7 @@ jobs:
           submodules: recursive
       - name: Win32 Build
         shell: powershell
-        run: ./win32_build.ps1 -Package -Tagged -Installer
+        run: ./win32_build.ps1 -Package
       - name: Archive Win32 Package
         uses: actions/upload-artifact@v2
         with:
@@ -26,7 +26,7 @@ jobs:
       - name: Install Prerequisites
         run: |
           sudo apt -y update
-          sudo apt -y install rpm ninja-build libgl-dev libwayland-dev libx11-dev libxrandr-dev libxinerama-dev libxkbcommon-dev libxcursor-dev libxi-dev
+          sudo apt -y install rpm ninja-build pandoc libgl-dev libwayland-dev libx11-dev libxrandr-dev libxinerama-dev libxkbcommon-dev libxcursor-dev libxi-dev
       - name: Linux Build
         run: make package
       - name: Archive Linux Packages

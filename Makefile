@@ -24,7 +24,7 @@ release:
 	$(MAKE) CMAKE_BUILD_TYPE=Release gips
 
 package: release
-	ninja -C _build package
+	ninja -C _build gips docs package
 
 test: gips
 	./gips

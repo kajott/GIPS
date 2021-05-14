@@ -140,6 +140,27 @@ add_custom_command (
             -P ${CMAKE_CURRENT_LIST_DIR}/version.cmake
 )
 
+# provide converted documentation files
+add_custom_command (
+    MAIN_DEPENDENCY ${CMAKE_CURRENT_LIST_DIR}/README.md
+    OUTPUT          ${CMAKE_CURRENT_LIST_DIR}/README.html
+    COMMAND ${CMAKE_COMMAND} -DFILE=${CMAKE_CURRENT_LIST_DIR}/README
+                             -DTITLE="About GIPS"
+                             -DREMOVE=Build
+                             -P ${CMAKE_CURRENT_LIST_DIR}/md2html.cmake
+)
+add_custom_command (
+    MAIN_DEPENDENCY ${CMAKE_CURRENT_LIST_DIR}/ShaderFormat.md
+    OUTPUT          ${CMAKE_CURRENT_LIST_DIR}/ShaderFormat.html
+    COMMAND ${CMAKE_COMMAND} -DFILE=${CMAKE_CURRENT_LIST_DIR}/ShaderFormat
+                             -DTITLE="GIPS Shader Format"
+                             -P ${CMAKE_CURRENT_LIST_DIR}/md2html.cmake
+)
+add_custom_target (docs
+    DEPENDS ${CMAKE_CURRENT_LIST_DIR}/README.html
+            ${CMAKE_CURRENT_LIST_DIR}/ShaderFormat.html
+)
+
 # make the binary appear in the project's root directory
 set_target_properties (gips PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY                "${CMAKE_CURRENT_LIST_DIR}"
@@ -165,7 +186,7 @@ set (CPACK_PACKAGE_CONTACT "Martin J. Fiedler <keyj@emphy.de>")
 set (CPACK_OUTPUT_FILE_PREFIX "${CMAKE_CURRENT_LIST_DIR}")
 if (UNIX)
     install (TARGETS gips RUNTIME)
-    install (FILES LICENSE.txt README.md ShaderFormat.md DESTINATION share/doc/gips)
+    install (FILES LICENSE.txt README.html ShaderFormat.html DESTINATION share/doc/gips)
     install (DIRECTORY shaders DESTINATION share/gips)
     set (CPACK_GENERATOR "TXZ;DEB;RPM")
     set (CPACK_PACKAGE_NAME "gips")
@@ -183,9 +204,9 @@ if (UNIX)
 elseif (WIN32)
     string (REPLACE "\\" "/" CMAKE_INSTALL_PREFIX "$ENV{ProgramW6432}/GIPS")
     install (TARGETS gips DESTINATION .)
-    install (FILES LICENSE.txt README.md ShaderFormat.md DESTINATION .)
+    install (FILES LICENSE.txt README.html ShaderFormat.html DESTINATION .)
     install (DIRECTORY shaders DESTINATION .)
-    set (CPACK_GENERATOR "NSIS64")
+    set (CPACK_GENERATOR "NSIS64;ZIP")
     set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_LIST_DIR}/LICENSE.txt")
     set (CPACK_PACKAGE_NAME "GIPS")
     set (CPACK_PACKAGE_INSTALL_DIRECTORY "GIPS")
@@ -193,5 +214,6 @@ elseif (WIN32)
     set (CPACK_NSIS_PACKAGE_NAME "GIPS")
     set (CPACK_PACKAGE_EXECUTABLES "gips;GIPS")
     set (CPACK_NSIS_EXECUTABLES_DIRECTORY .)
+    set (CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
 endif ()
 include (CPack)
