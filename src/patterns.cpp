@@ -15,7 +15,9 @@
 class PRNG {  // bread-and-butter xorshift128
     uint32_t x, y, z, w;
 public:
-    explicit PRNG(uint32_t seed=0) {
+    explicit inline PRNG(uint32_t seed=0) { setSeed(seed); }
+    inline PRNG(int a, int b) { setSeed((uint32_t(a * b) ^ uint32_t(a - b)) + 'g'*'i'*'p'*'s'); }
+    inline void setSeed(uint32_t seed) {
         x = 0x13375EED ^ seed;
         y = 0xAFFED00F - seed;
         z = 0xDEADBEEF + seed;
@@ -45,7 +47,7 @@ const PatternDefinition Patterns[] = {
 
 { "Gradient", true,
 [](uint8_t* data, int width, int height, bool alpha) {
-    PRNG r((uint32_t(width * height) ^ uint32_t(width - height)) + 'g'*'i'*'p'*'s');
+    PRNG r(width, height);
 
     struct Gradient {
         int fx, fy;
@@ -263,6 +265,102 @@ const PatternDefinition Patterns[] = {
                     : uint8_t(128.0f + 127.9f * std::sin(f + cPhase + 3.1f));
         }
     }
+}},
+
+///////////////////////////////////////////////////////////////////////////////
+
+{ "Voronoi", true,
+[](uint8_t* data, int width, int height, bool alpha) {
+    // allocate JFA map
+    struct JFAPixel {
+        uint16_t cx, cy;
+        inline bool valid() const { return cx && cy; }
+        inline int distTo(int x, int y) const {
+            x -= cx;
+            y -= cy;
+            return x * x + y * y;
+        }
+    };
+    JFAPixel *jfaMap = new(std::nothrow) JFAPixel[width * height];
+    if (!jfaMap) {
+        memset(data, 0, width * height * 4);
+        return;
+    }
+    memset(jfaMap, 0, sizeof(JFAPixel) * size_t(width * height));
+
+    // plant "seeds"
+    PRNG r(width, height);
+    int cellSize = std::max(width, height) >> 3;
+    cellSize = r.getRange(cellSize - (cellSize >> 2), cellSize + (cellSize >> 2));
+    for (int cby = -(cellSize >> 1);  cby < height;  cby += cellSize) {
+        for (int cbx = -(cellSize >> 1);  cbx < width;  cbx += cellSize) {
+            int x = cbx + r.getRange(cellSize >> 4, cellSize - (cellSize >> 4));
+            int y = cby + r.getRange(cellSize >> 4, cellSize - (cellSize >> 4));
+            if ((x >= 0) && (y >= 0) && (x < width) && (y < height)) {
+                auto& m = jfaMap[y * width + x];
+                m.cx = uint16_t(x);
+                m.cy = uint16_t(y);
+            }
+        }
+    }
+    float distNorm = 1.0f / (std::sqrt(2.0f) * float(cellSize));
+
+    // JFA propagation
+    auto jfaSingleDir = [=](const int dx, const int dy) {
+        for (int y = std::max(0, -dy);  y < std::min(height, height - dy);  ++y) {
+            const auto *srcRow = &jfaMap[(y + dy) * width];
+            auto *destRow = &jfaMap[y * width];
+            for (int x = std::max(0, -dx);  x < std::min(width, width - dx);  ++x) {
+                const auto& src = srcRow[x + dx];
+                auto& dest = destRow[x];
+                if (!dest.valid() || (src.valid() && (src.distTo(x, y) < dest.distTo(x, y)))) {
+                    dest = src;
+                }
+            }
+        }
+    };
+    int stepSize = cellSize;
+    while (stepSize & (stepSize + 1)) { stepSize |= (stepSize >> 1); }
+    for (++stepSize;  stepSize;  stepSize >>= 1) {
+        jfaSingleDir( stepSize, 0);
+        jfaSingleDir(-stepSize, 0);
+        jfaSingleDir(0,  stepSize);
+        jfaSingleDir(0, -stepSize);
+    }
+
+    // convert JFA map into result image
+    const JFAPixel *pMap = jfaMap;
+    JFAPixel cluster; cluster.cx = cluster.cy = 0;
+    float baseCol[3] = {0.0f,};
+    for (int y = 0;  y < height;  ++y) {
+        for (int x = 0;  x < width;  ++x) {
+            // get current cluster and its base color
+            if ((pMap->cx != cluster.cx) || (pMap->cy != cluster.cy)) {
+                cluster = *pMap;
+                r.setSeed((uint32_t(cluster.cx) << 16) | uint32_t(cluster.cy));
+                (void)r.getU32();
+                baseCol[0] = r.getRange(0.0f, 0.5f);
+                baseCol[1] = r.getRange(0.5f, 1.0f);
+                baseCol[2] = r.getRange(baseCol[0], baseCol[1]);
+                std::swap(baseCol[0], baseCol[r.getRange(0, 2)]);
+                std::swap(baseCol[1], baseCol[r.getRange(1, 2)]);
+            }
+            ++pMap;
+
+            // get (inverse) normalized distance from center
+            float dist = 1.0f - std::min(1.0f, distNorm * std::sqrt(float(cluster.distTo(x, y))));
+
+            // compute final color
+            for (int i = 0;  i < 3;  ++i) {
+                float c = baseCol[i];
+                if (!alpha) { c *= dist; }
+                *data++ = uint8_t(c * 255.984375f);
+            }
+            *data++ = alpha ? uint8_t(dist * 255.984375f) : 0xFF;
+        }
+    }
+
+    delete[] jfaMap;
 }},
 
 ///////////////////////////////////////////////////////////////////////////////
