@@ -1,1 +1,1 @@
-#define GIPS_VERSION "1.1-WIP"
+#define GIPS_VERSION "1.1"
