@@ -1,5 +1,7 @@
 # GIPS: The GLSL Image Processing System
 
+![GIPS Logo](logo/gips_logo.svg)
+
 An image processing application that applies filters
 written in the OpenGL Shading Language (GLSL).
 
