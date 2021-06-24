@@ -82,7 +82,8 @@ if (WIN32)
     target_sources (gips PRIVATE
         src/file_util_win32.cpp
         src/clipboard_win32.cpp
-        gips.manifest
+        src/icon.rc
+        src/utf8.manifest
     )
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
         set_target_properties (gips PROPERTIES WIN32_EXECUTABLE ON)
