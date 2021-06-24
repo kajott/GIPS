@@ -10,6 +10,8 @@
 
 #include "patterns.h"
 
+#include "gips_logo.h"
+
 ///////////////////////////////////////////////////////////////////////////////
 
 class PRNG {  // bread-and-butter xorshift128
@@ -41,12 +43,9 @@ public:
     }
 };
 
-const PatternDefinition Patterns[] = {
-
 ///////////////////////////////////////////////////////////////////////////////
 
-{ "Gradient", true,
-[](uint8_t* data, int width, int height, bool alpha) {
+static void PatGradient(uint8_t* data, int width, int height, bool alpha) {
     PRNG r(width, height);
 
     struct Gradient {
@@ -115,7 +114,40 @@ const PatternDefinition Patterns[] = {
             }
         }
     }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+const PatternDefinition Patterns[] = {
+
+{ "Gradient with Logo", true,
+[](uint8_t* data, int width, int height, bool alpha) {
+    PatGradient(data, width, height, alpha);
+    if ((width < LogoWidth) || (height < LogoHeight)) { return; }
+    const char* logoPos = LogoData;
+    data += (((width - LogoWidth) >> 1) + width * ((height - LogoHeight) >> 1)) << 2;
+    uint_fast8_t run = 0;
+    uint_fast16_t level = 0;
+    static const uint_fast16_t levelTab[10] = { 140, 151, 163, 175, 186, 198, 209, 221, 233, 244 };
+    for (int y = LogoHeight;  y;  --y) {
+        for (int x = LogoWidth;  x;  --x) {
+            if (!run) {
+                char c = *logoPos++;
+                if (c < 64) { run = 1;       level = levelTab[c - '0']; }
+                else        { run = c & 31;  level = (c < 96) ? 128 : 256; }
+            }
+            data[0] = uint8_t((uint_fast16_t(data[0]) * level) >> 8);
+            data[1] = uint8_t((uint_fast16_t(data[1]) * level) >> 8);
+            data[2] = uint8_t((uint_fast16_t(data[2]) * level) >> 8);
+            data[3] = uint8_t((uint_fast16_t(data[3]) * level) >> 8) + uint8_t(256 - (level | 1));
+            data += 4;
+            --run;
+        }
+        data += (width - LogoWidth) << 2;
+    }
 }},
+
+{ "Gradient", true, PatGradient },
 
 ///////////////////////////////////////////////////////////////////////////////
 
