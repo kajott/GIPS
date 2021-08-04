@@ -1,6 +1,6 @@
 # GIPS: The GLSL Image Processing System
 
-![GIPS Logo](logo/gips_logo.svg)
+![GIPS Logo](logo/gips_logo.svg) 
 
 An image processing application that applies filters
 written in the OpenGL Shading Language (GLSL).
@@ -142,7 +142,7 @@ Release builds will be generated as console executables.
 
 ## Credits
 
-GIPS is written by Martin J. Fiedler (<keyj@emphy.de>)
+GIPS is written by Martin J. Fiedler (<keyj@emphy.de>).
 
 Used third-party software:
 
@@ -156,5 +156,5 @@ Used third-party software:
   for image file I/O
 - Sam Hocevar's [Portable File Dialogs](https://github.com/samhocevar/portable-file-dialogs)
 - Timothy Lottes' FXAA algorithm is part of the example shaders
-- the documentation in the Win32 binary package
+- the documentation in the pre-built packages
   is converted from Markdown to HTML using [Pandoc](https://pandoc.org/)

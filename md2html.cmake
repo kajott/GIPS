@@ -29,17 +29,19 @@ if (NOT PANDOC)
     endif ()
 endif ()
 
-# remove section if configured to do so
+# modify file
+file (READ "${INFILE}" DATA)
 if (REMOVE)
-    file (READ "${INFILE}" DATA)
     string (REGEX REPLACE "\n## ${REMOVE}.*\n## " "\n## " DATA "${DATA}")
-    file (WRITE "${TMPFILE}" "${DATA}")
-    set (INFILE "${TMPFILE}")
 endif ()
+string (REGEX REPLACE "\\.md\\)" ".html)" DATA "${DATA}")
+file (WRITE "${TMPFILE}" "${DATA}")
+set (INFILE "${TMPFILE}")
 
 # run pandoc
 execute_process (
-    COMMAND "${PANDOC}" -f markdown -t html5 -s -T "${TITLE}" "${INFILE}" -o "${OUTFILE}"
+    COMMAND "${PANDOC}" -f markdown -t html5 -s --self-contained -T "${TITLE}" -V "mainfont=\"Fira Sans\",\"Segoe UI\",Roboto,\"Noto Sans\",sans-serif" -V fontsize=16px -V sourcefile= "${INFILE}" -o "${OUTFILE}"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
     RESULT_VARIABLE RES
     ERROR_VARIABLE ERRORS
 )
