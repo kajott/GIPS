@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 // @gips_version=1 @coord=rel @filter=on
 
 uniform vec2 centerI;  // @min=-2 @max=2  input center

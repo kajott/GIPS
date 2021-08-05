@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 // @gips_version=1 @coord=none @filter=off
 
 uniform vec3 row0 = vec3(0.0, 0.0, 0.0);  // @min=-64 @max=64 abc

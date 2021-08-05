@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 // @gips_version=1 @coord=rel @filter=off
 
 uniform float gscale = 1.0;  // @min=0 @max=5 global scale (logarithmic)

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 // @gips_version=1 @coord=rel @filter=off
 
 uniform float frequency = 150.0;  // @min=0.1 @max=1000 @digits=1

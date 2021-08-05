@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 // @gips_version=1
 
 uniform vec3 thresh = vec3(0.5, 0.5, 0.5);  // @color threshold color

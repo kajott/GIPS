@@ -1,4 +1,8 @@
+// SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 // @gips_version=1 @coord=pixel @filter=off
+
 // not a "true" Gaussian blur -- using a cheap (finite) approximation
 
 uniform float sigma = 0.3;   // @min=0.3 @max=50 @digits=2

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 // @gips_version=1 @coord=pixel @filter=off
 
 uniform float pattern;  // @int @max=3 RGGB / BGGR / GBRG / GRBG

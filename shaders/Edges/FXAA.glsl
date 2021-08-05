@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2009-2011 Timothy Lottes
+// SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 // @gips_version=1 @coord=none @filter=on
 
 // This is Timothy Lottes' public-domain FXAA algorithm,

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 // @gips_version=1
 
 uniform vec3 mixR = vec3(1., 0., 0.);  // @min=-2 @max=2 red mix

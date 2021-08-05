@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 // @gips_version=1 @coord=none @filter=off
 
 vec3 med3rgb(vec3 a, vec3 b, vec3 c) {
