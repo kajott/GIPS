@@ -6,6 +6,7 @@
 uniform float ev;           // @min=-5 @max=5 EV
 uniform float gamma = 2.2;  // @min=.5 @max=10 working gamma
 uniform float reinhard;     // @switch brighten with Reinhard tone compression
+uniform float gamutMap;     // @switch preserve hue in clipped regions
 uniform float clipMark;     // @switch mark clipped regions
 
 vec3 run(vec3 rgb) {
@@ -21,6 +22,18 @@ vec3 run(vec3 rgb) {
         rgb = rgb / (rgb + 1.0);
         // post-scale so white stays white
         rgb *= (gain + 1.0) / gain;
+    }
+
+    // gamut mapping
+    if (gamutMap > 0.5) {
+        float luma = dot(rgb, vec3(0.299, 0.587, 0.114));
+        rgb -= vec3(luma);
+        float limit = max(1.0 - luma, 1.0e-6);
+        float maxv = max(max(rgb.r, rgb.g), rgb.b);
+        if (maxv > limit) {
+            rgb *= limit / maxv;
+        }
+        rgb += vec3(luma);
     }
 
     // reverse gamma
