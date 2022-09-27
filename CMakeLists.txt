@@ -76,6 +76,7 @@ if (WIN32)
 else ()
     target_link_libraries (gips m dl GL)
 endif ()
+target_compile_definitions (gips_thirdparty PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLAD)
 
 # platform-dependent additional sources and options
 if (WIN32)
